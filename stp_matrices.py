@@ -1,8 +1,8 @@
 import numpy as np
 import quadpy as qp
 
-import basis_functions
-import dg_matrices
+from . import basis_functions
+from . import dg_matrices
 
 ### generates matrices which are needed for the space time predictor:
 ### Z
@@ -18,16 +18,26 @@ class stp_generator:
         self.scheme = qp.line_segment.gauss_legendre(15)
         self.geometry = [0.0, 1.0]
         self.dg_generator = dg_matrices.dg_generator(self.order, 1)
+        self.S = self.dg_generator.mass_matrix()
 
-    def eval_at_zero(self):
+
+    def w(self):
         number_of_basis_functions = self.generator.number_of_basis_functions()
         w = np.zeros((number_of_basis_functions,))
-    
         for i in range(number_of_basis_functions):
             w[i] = self.generator.eval_basis(0, i)
+        return w
 
-        S = self.dg_generator.mass_matrix()
-        return np.linalg.solve(S, w)
+    def S(self):
+        return self.S
+
+    def K(self):
+        return self.dg_generator.stiffness_matrix(0)
+
+    def S_hat(self):
+        W = self.W()
+        K_t = self.dg_generator.stiffness_matrix(0)
+        return np.linalg.solve(W - K_t, self.S)
 
     def W(self):
         number_of_basis_functions = self.generator.number_of_basis_functions()
@@ -40,11 +50,10 @@ class stp_generator:
         return W
 
     def Z(self):
-        S = self.dg_generator.mass_matrix()
         W = self.W()
         K_t = self.dg_generator.stiffness_matrix(0)
 
-        return np.linalg.solve(S, W-K_t)
+        return np.linalg.solve(self.S, W-K_t)
 
     def time_int(self):
         number_of_basis_functions = self.generator.number_of_basis_functions()

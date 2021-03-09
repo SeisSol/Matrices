@@ -1,8 +1,8 @@
 import numpy as np
 import quadpy as qp
 
-import basis_functions
-import writer
+from . import basis_functions
+from . import writer
 
 ### Generates matrices which are of general interest for DG methods: 
 ### Mass and Stiffness matrices
