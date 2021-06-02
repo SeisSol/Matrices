@@ -10,69 +10,74 @@ class TestBasisFunctions(unittest.TestCase):
     def test_1d(self):
         expected_results= np.load("test/basis_1d.npy")
         for order in range(8):
+            basis_function_generator = basis_functions.BasisFunctionGenerator1D(order)
             for i in range(9):
-                res = basis_functions.eval_basis_1d(0.1*(i+1), order)
+                res = basis_function_generator.eval_basis(0.1*(i+1), order)
                 self.assertRelativelyEqual(expected_results[order, i], res)
     
     def test_2d(self):
         expected_results = np.load("test/basis_2d.npy")
+        basis_function_generator = basis_functions.BasisFunctionGenerator2D(6)
         for number in range(54):
             for i in range(9):
                 for j in range(9):
-                    res = basis_functions.eval_basis_2d([0.1*(i+1), 0.1*(j+1)], basis_functions.number_to_index_2d(number))
+                    res = basis_function_generator.eval_basis([0.1*(i+1), 0.1*(j+1)], number)
                     self.assertRelativelyEqual(expected_results[number, i, j], res)
 
     def test_3d(self):
         expected_results = np.load("test/basis_3d.npy")
+        basis_function_generator = basis_functions.BasisFunctionGenerator3D(6)
         for number in range(50):
             for i in range(9):
                 for j in range(9):
                     for k in range(9):
                         if j + k != 8: 
-                            res = basis_functions.eval_basis_3d([0.1*(i+1), 0.1*(j+1), 0.1*(k+1)], basis_functions.number_to_index_3d(number))
+                            res = basis_function_generator.eval_basis([0.1*(i+1), 0.1*(j+1), 0.1*(k+1)], number)
                             self.assertRelativelyEqual(expected_results[number, i, j, k], res)
 
     def test_diff_3d(self):
+        generator = basis_functions.BasisFunctionGenerator3D(6)
         for number in range(5):
             for i in range(3):
                 for j in range(3):
                     for k in range(3):
                         if j+k != 8:
                             x = [0.1*(i+1), 0.1*(j+1), 0.1*(k+1)]
-                            f = lambda xi: basis_functions.eval_basis_3d(xi, basis_functions.number_to_index_3d(number))
+                            f = lambda xi: generator.eval_basis(xi, number)
                             for l in range(3):
                                 self.assertRelativelyEqual(self.numerical_gradient(f, x, l),\
-                                basis_functions.eval_diff_basis_3d(x, basis_functions.number_to_index_3d(number), l), atol=1e-4, rtol=1e-4)
+                                generator.eval_diff_basis(x, number, l), atol=1e-4, rtol=1e-4)
                             
 
     def test_index(self):
-        self.assertEqual(basis_functions.index_2d_to_number(0, 0), 0)
-        self.assertEqual(basis_functions.index_2d_to_number(1, 0), 1)
-        self.assertEqual(basis_functions.index_2d_to_number(0, 1), 2)
-        self.assertEqual(basis_functions.index_2d_to_number(2, 0), 3)
-        self.assertEqual(basis_functions.index_2d_to_number(1, 1), 4)
-        self.assertEqual(basis_functions.index_2d_to_number(0, 2), 5)
-        self.assertEqual(basis_functions.index_2d_to_number(3, 0), 6)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 0), 0)
-        self.assertEqual(basis_functions.index_3d_to_number(1, 0, 0), 1)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 1, 0), 2)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 1), 3)
-        self.assertEqual(basis_functions.index_3d_to_number(2, 0, 0), 4)
-        self.assertEqual(basis_functions.index_3d_to_number(1, 1, 0), 5)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 2, 0), 6)
-        self.assertEqual(basis_functions.index_3d_to_number(1, 0, 1), 7)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 1, 1), 8)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 2), 9)
-        self.assertEqual(basis_functions.index_3d_to_number(3, 0, 0), 10)
-        self.assertEqual(basis_functions.index_3d_to_number(2, 1, 0), 11)
-        self.assertEqual(basis_functions.index_3d_to_number(1, 2, 0), 12)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 3, 0), 13)
-        self.assertEqual(basis_functions.index_3d_to_number(2, 0, 1), 14)
-        self.assertEqual(basis_functions.index_3d_to_number(1, 1, 1), 15)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 2, 1), 16)
-        self.assertEqual(basis_functions.index_3d_to_number(1, 0, 2), 17)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 1, 2), 18)
-        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 3), 19)
+        generator_2d = basis_functions.BasisFunctionGenerator2D(4)
+        self.assertEqual(generator_2d.unroll_index([0, 0]), 0)
+        self.assertEqual(generator_2d.unroll_index([1, 0]), 1)
+        self.assertEqual(generator_2d.unroll_index([0, 1]), 2)
+        self.assertEqual(generator_2d.unroll_index([2, 0]), 3)
+        self.assertEqual(generator_2d.unroll_index([1, 1]), 4)
+        self.assertEqual(generator_2d.unroll_index([0, 2]), 5)
+        self.assertEqual(generator_2d.unroll_index([3, 0]), 6)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 0), 0)
+#        self.assertEqual(basis_functions.index_3d_to_number(1, 0, 0), 1)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 1, 0), 2)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 1), 3)
+#        self.assertEqual(basis_functions.index_3d_to_number(2, 0, 0), 4)
+#        self.assertEqual(basis_functions.index_3d_to_number(1, 1, 0), 5)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 2, 0), 6)
+#        self.assertEqual(basis_functions.index_3d_to_number(1, 0, 1), 7)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 1, 1), 8)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 2), 9)
+#        self.assertEqual(basis_functions.index_3d_to_number(3, 0, 0), 10)
+#        self.assertEqual(basis_functions.index_3d_to_number(2, 1, 0), 11)
+#        self.assertEqual(basis_functions.index_3d_to_number(1, 2, 0), 12)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 3, 0), 13)
+#        self.assertEqual(basis_functions.index_3d_to_number(2, 0, 1), 14)
+#        self.assertEqual(basis_functions.index_3d_to_number(1, 1, 1), 15)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 2, 1), 16)
+#        self.assertEqual(basis_functions.index_3d_to_number(1, 0, 2), 17)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 1, 2), 18)
+#        self.assertEqual(basis_functions.index_3d_to_number(0, 0, 3), 19)
 
     def test_thetha_a_derivative(self):
         for order in range(7):

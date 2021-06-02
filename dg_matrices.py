@@ -12,18 +12,17 @@ class dg_generator:
         self.order = o
         self.dim = d
 
-        #TODO: Choose a quadrature formula according to the order
         if self.dim == 3:
             self.generator = basis_functions.BasisFunctionGenerator3D(self.order)
-            self.scheme = qp.tetrahedron.xiao_gimbutas_15()
+            self.scheme = qp.t3.get_good_scheme(self.order+1)
             self.geometry = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         elif self.dim == 2:
             self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
-            self.scheme = qp.triangle.xiao_gimbutas_15()
+            self.scheme = qp.t2.get_good_scheme(self.order+1)
             self.geometry = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
         elif self.dim == 1:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
-            self.scheme = qp.line_segment.gauss_legendre(15)
+            self.scheme = qp.c1.gauss_legendre(self.order+1)
             self.geometry = [0.0, 1.0]
         else:
             raise Execption('Can only generate 1D, 2D or 2D basis functions')

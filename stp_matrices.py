@@ -15,7 +15,7 @@ class stp_generator:
 
         #TODO: Choose a quadrature formula according to the order
         self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
-        self.scheme = qp.line_segment.gauss_legendre(15)
+        self.scheme = qp.c1.gauss_legendre(self.order+1)
         self.geometry = [0.0, 1.0]
         self.dg_generator = dg_matrices.dg_generator(self.order, 1)
         self.S = self.dg_generator.mass_matrix()
@@ -47,6 +47,7 @@ class stp_generator:
             for j in range(number_of_basis_functions):
                 W[i,j] = self.generator.eval_basis(1, i) * \
                     self.generator.eval_basis(1, j)
+
         return W
 
     def Z(self):
