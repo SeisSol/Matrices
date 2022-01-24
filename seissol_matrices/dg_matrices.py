@@ -70,6 +70,6 @@ class dg_generator:
 if __name__ == '__main__':
     from seissol_matrices import xml_io
     generator = dg_generator(3, 3)
-    xml_io.write_matrix_to_xml(generator.kDivM(2), "kDivM(2)", "kdivm.xml")
+    xml_io.write_matrix(generator.kDivM(2), "kDivM(2)", "kdivm.xml")
 
     

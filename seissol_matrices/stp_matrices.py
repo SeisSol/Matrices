@@ -65,7 +65,7 @@ class stp_generator:
 if __name__ == '__main__':
     from seissol_matrices import xml_io
     generator = stp_generator(5)
-    xml_io.write_matrix_to_xml(generator.Z(), "Z", "z.xml")
+    xml_io.write(generator.Z(), "Z", "z.xml")
 
 
     
