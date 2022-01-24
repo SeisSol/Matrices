@@ -6,7 +6,7 @@ import numpy as np
 from seissol_matrices import basis_functions
 
 
-class TestBasisFunctions(unittest.TestCase):
+class test_basis_functions(unittest.TestCase):
     def test_1d(self):
         expected_results = np.load("tests/basis_1d.npy")
         for order in range(8):
