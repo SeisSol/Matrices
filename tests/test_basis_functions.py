@@ -3,12 +3,12 @@
 import unittest
 import numpy as np
 
-import basis_functions
+from seissol_matrices import basis_functions
 
 class TestBasisFunctions(unittest.TestCase):
 
     def test_1d(self):
-        expected_results= np.load("test/basis_1d.npy")
+        expected_results= np.load("tests/basis_1d.npy")
         for order in range(8):
             basis_function_generator = basis_functions.BasisFunctionGenerator1D(order)
             for i in range(9):
@@ -16,7 +16,7 @@ class TestBasisFunctions(unittest.TestCase):
                 self.assertRelativelyEqual(expected_results[order, i], res)
     
     def test_2d(self):
-        expected_results = np.load("test/basis_2d.npy")
+        expected_results = np.load("tests/basis_2d.npy")
         basis_function_generator = basis_functions.BasisFunctionGenerator2D(6)
         for number in range(54):
             for i in range(9):
@@ -25,7 +25,7 @@ class TestBasisFunctions(unittest.TestCase):
                     self.assertRelativelyEqual(expected_results[number, i, j], res)
 
     def test_3d(self):
-        expected_results = np.load("test/basis_3d.npy")
+        expected_results = np.load("tests/basis_3d.npy")
         basis_function_generator = basis_functions.BasisFunctionGenerator3D(6)
         for number in range(50):
             for i in range(9):

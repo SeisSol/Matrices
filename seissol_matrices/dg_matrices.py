@@ -1,8 +1,7 @@
 import numpy as np
 import quadpy as qp
 
-from . import basis_functions
-from . import writer
+from seissol_matrices import basis_functions
 
 ### Generates matrices which are of general interest for DG methods: 
 ### Mass and Stiffness matrices
@@ -31,46 +30,46 @@ class dg_generator:
         self.K = self.dim * [None]
 
     def mass_matrix(self):
+        if not np.any(self.M == None):
+            return self.M
         number_of_basis_functions = self.generator.number_of_basis_functions()
-        M = np.zeros((number_of_basis_functions, number_of_basis_functions))
+        self.M = np.zeros((number_of_basis_functions, number_of_basis_functions))
     
         for i in range(number_of_basis_functions):
             for j in range(number_of_basis_functions):
                 prod = lambda x: self.generator.eval_basis(x, i) * \
                         self.generator.eval_basis(x, j)
-                M[i,j] = self.scheme.integrate(prod, self.geometry)
-        return M
+                self.M[i,j] = self.scheme.integrate(prod, self.geometry)
+        return self.M
 
-    def stiffness_matrix(self, k):
+    def stiffness_matrix(self, dim):
+        if not np.any(self.K[dim] == None):
+            return self.K[dim]
         number_of_basis_functions = self.generator.number_of_basis_functions()
-        K = np.zeros((number_of_basis_functions, number_of_basis_functions))
+        self.K[dim] = np.zeros((number_of_basis_functions, number_of_basis_functions))
 
         for i in range(number_of_basis_functions):
             for j in range(number_of_basis_functions):
-                prod = lambda x: self.generator.eval_diff_basis(x, i, k) * \
+                prod = lambda x: self.generator.eval_diff_basis(x, i, dim) * \
                         self.generator.eval_basis(x, j)
-                K[i,j] = self.scheme.integrate(prod, self.geometry)
-        return K
+                self.K[dim][i,j] = self.scheme.integrate(prod, self.geometry)
+        return self.K[dim]
 
     def kDivM(self, dim):
-        if np.any(self.K[dim] == None):
-            self.K[dim] = self.stiffness_matrix(dim)
-        if np.any(self.M == None):
-            self.M = self.mass_matrix()
+        stiffness = self.stiffness_matrix(dim)
+        mass = self.mass_matrix()
 
-        return np.linalg.solve(self.M, self.K[dim])
+        return np.linalg.solve(mass, stiffness)
 
     def kDivMT(self, dim):
-        if np.any(self.K[dim] == None):
-            self.K[dim] = self.stiffness_matrix(dim)
-        if np.any(self.M == None):
-            self.M = self.mass_matrix()
+        stiffness = self.stiffness_matrix(dim)
+        mass = self.mass_matrix()
 
-        return np.linalg.solve(self.M, self.K[dim].T)
+        return np.linalg.solve(mass, stiffness.T)
 
 if __name__ == '__main__':
+    from seissol_matrices import xml_io
     generator = dg_generator(3, 3)
-
-    writer.write_matrix_to_xml(generator.kDivM(2), "kDivM(2)")
+    xml_io.write_matrix_to_xml(generator.kDivM(2), "kDivM(2)", "kdivm.xml")
 
     

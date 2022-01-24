@@ -1,8 +1,8 @@
 import numpy as np
 import quadpy as qp
 
-from . import basis_functions
-from . import dg_matrices
+from seissol_matrices import basis_functions
+from seissol_matrices import dg_matrices
 
 ### generates matrices which are needed for the space time predictor:
 ### Z
@@ -13,7 +13,6 @@ class stp_generator:
     def __init__(self, o):
         self.order = o
 
-        #TODO: Choose a quadrature formula according to the order
         self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
         self.scheme = qp.c1.gauss_legendre(self.order+1)
         self.geometry = [0.0, 1.0]
@@ -64,10 +63,9 @@ class stp_generator:
         return t
 
 if __name__ == '__main__':
+    from seissol_matrices import xml_io
     generator = stp_generator(5)
-    print(generator.eval_at_zero())
-    print(generator.Z())
-    print(generator.time_int())
+    xml_io.write_matrix_to_xml(generator.Z(), "Z", "z.xml")
 
 
     
