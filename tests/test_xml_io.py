@@ -22,7 +22,11 @@ class test_xml_io(unittest.TestCase):
     def test_write_read_several_matrices(self):
         filename = "random.xml"
         original_names = ["random", "two", "three"]
-        original_matrix = [np.random.rand(5, 5), np.random.rand(2, 3), np.random.rand(3, 2)]
+        original_matrix = [
+            np.random.rand(5, 5),
+            np.random.rand(2, 3),
+            np.random.rand(3, 2),
+        ]
         for matrix, name in zip(original_matrix, original_names):
             xml_io.write_matrix(matrix, name, filename)
 

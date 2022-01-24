@@ -11,19 +11,21 @@ def read_xml(filename):
     root = tree.getroot()
     return root
 
+
 def write_xml(root, filename):
     ET.indent(root, "  ")
     tree = ET.ElementTree(root)
-    xmlstr = ET.tostring(root, encoding="utf8", method="xml", xml_declaration=True).decode("utf-8")
+    xmlstr = ET.tostring(
+        root, encoding="utf8", method="xml", xml_declaration=True
+    ).decode("utf-8")
     with open(filename, "w+") as f:
         f.write(xmlstr)
         f.write("\n")
 
 
 def create_empty_xml_file(filename):
-    root = ET.Element( "matrices")
+    root = ET.Element("matrices")
     write_xml(root, filename)
-
 
 
 def write_matrix(matrix, matrixname, filename):
@@ -32,11 +34,13 @@ def write_matrix(matrix, matrixname, filename):
 
     root = read_xml(filename)
     if not root.tag == "matrices":
-        raise ValueError("Try to append matrix to an XML file, which does not have <matrices> as root tag.")
-    
+        raise ValueError(
+            "Try to append matrix to an XML file, which does not have <matrices> as root tag."
+        )
+
     rows, columns = matrix.shape
-    matrix_root = ET.SubElement(root,
-        "matrix", {"name": matrixname, "columns": str(columns), "rows": str(rows)}
+    matrix_root = ET.SubElement(
+        root, "matrix", {"name": matrixname, "columns": str(columns), "rows": str(rows)}
     )
     for r in range(rows):
         for c in range(columns):
@@ -53,7 +57,6 @@ def write_matrix(matrix, matrixname, filename):
     write_xml(root, filename)
 
 
-
 def read_matrix(matrixname, filename):
     root = read_xml(filename)
     if not root.tag == "matrices":
@@ -61,11 +64,11 @@ def read_matrix(matrixname, filename):
 
     for matrix_root in root:
 
-        if matrix_root.tag == "matrix" and matrix_root.attrib["name"] == matrixname: 
+        if matrix_root.tag == "matrix" and matrix_root.attrib["name"] == matrixname:
             rows = int(matrix_root.attrib["rows"])
             columns = int(matrix_root.attrib["columns"])
             matrix = np.zeros((rows, columns))
-        
+
             for child in matrix_root:
                 if child.tag == "entry":
                     row = int(child.attrib["row"]) - 1
@@ -73,4 +76,5 @@ def read_matrix(matrixname, filename):
                     value = float(child.attrib["value"])
                     matrix[row, column] = value
 
-    return matrix
+            return matrix
+    raise ValueError(f"Matrix with name {matrixname} not found in {filename}.")

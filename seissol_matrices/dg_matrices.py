@@ -13,16 +13,17 @@ class dg_generator:
 
         if self.dim == 3:
             self.generator = basis_functions.BasisFunctionGenerator3D(self.order)
-            self.scheme = qp.t3.get_good_scheme(self.order + 1)
+            self.scheme = qp.t3.get_good_scheme(self.order * 2)
             self.geometry = [
                 [0.0, 0.0, 0.0],
                 [1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0],
                 [0.0, 0.0, 1.0],
             ]
+            self.face_generator = dg_generator(o, 2)
         elif self.dim == 2:
             self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
-            self.scheme = qp.t2.get_good_scheme(self.order + 1)
+            self.scheme = qp.t2.get_good_scheme(self.order * 2)
             self.geometry = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
         elif self.dim == 1:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
@@ -73,6 +74,100 @@ class dg_generator:
         mass = self.mass_matrix()
 
         return np.linalg.solve(mass, stiffness.T)
+
+    def face_to_face_parametrisation(self, x, side):
+        y = np.zeros((x.shape[0], x.shape[1]))
+        if side == 0:
+            y[0, :] = x[1, :]
+            y[1, :] = x[0, :]
+        elif side == 1:
+            y[0, :] = 1 - x[0, :] - x[1, :]
+            y[1, :] = x[1, :]
+        elif side == 2:
+            y[0, :] = x[0, :]
+            y[1, :] = 1 - x[0, :] - x[1, :]
+        return y
+
+    def face_times_face_mass_matrix(self, side):
+        assert self.dim == 3
+        number_of_face_basis_functions = (
+            self.face_generator.generator.number_of_basis_functions()
+        )
+
+        projected_basis_function = (
+            lambda x, i: self.face_generator.generator.eval_basis(
+                self.face_to_face_parametrisation(x, side), i
+            )
+        )
+
+        matrix = np.zeros(
+            (number_of_face_basis_functions, number_of_face_basis_functions)
+        )
+        for i in range(number_of_face_basis_functions):
+            for j in range(number_of_face_basis_functions):
+                prod = lambda x: self.face_generator.generator.eval_basis(
+                    x, i
+                ) * projected_basis_function(x, j)
+                matrix[i, j] = self.face_generator.scheme.integrate(
+                    prod, self.face_generator.geometry
+                )
+        return matrix
+
+    def fP(self, side):
+        return self.face_times_face_mass_matrix(side)
+
+    def volume_to_face_parametrisation(self, x, side):
+        y = np.zeros((x.shape[0] + 1, x.shape[1]))
+        if side == 0:
+            y[0, :] = x[1, :]
+            y[1, :] = x[0, :]
+        elif side == 1:
+            y[0, :] = x[0, :]
+            y[2, :] = x[1, :]
+        elif side == 2:
+            y[1, :] = x[1, :]
+            y[2, :] = x[0, :]
+        elif side == 3:
+            y[0, :] = 1 - x[0, :] - x[1, :]
+            y[1, :] = x[0, :]
+            y[2, :] = x[1, :]
+        return y
+
+    def volume_times_face_mass_matrix(self, side):
+        assert self.dim == 3
+        number_of_face_basis_functions = (
+            self.face_generator.generator.number_of_basis_functions()
+        )
+
+        projected_basis_function = lambda x, i: self.generator.eval_basis(
+            self.volume_to_face_parametrisation(x, side), i
+        )
+        number_of_basis_functions = self.generator.number_of_basis_functions()
+
+        matrix = np.zeros((number_of_face_basis_functions, number_of_basis_functions))
+        for i in range(number_of_face_basis_functions):
+            for j in range(number_of_basis_functions):
+                prod = lambda x: self.face_generator.generator.eval_basis(
+                    x, i
+                ) * projected_basis_function(x, j)
+                matrix[i, j] = self.face_generator.scheme.integrate(
+                    prod, self.face_generator.geometry
+                )
+        return matrix
+
+    def fMrT(self, side):
+        return self.volume_times_face_mass_matrix(side)
+
+    def rT(self, side):
+        matrix = self.volume_times_face_mass_matrix(side)
+        mass = self.face_generator.mass_matrix()
+        return np.linalg.solve(mass, matrix)
+
+    def rDivM(self, side):
+        assert self.dim == 3
+        matrix = self.rT(side)
+        mass = self.mass_matrix()
+        return np.linalg.solve(mass, matrix.T)
 
 
 if __name__ == "__main__":
