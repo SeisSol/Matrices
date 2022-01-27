@@ -1,5 +1,6 @@
 import numpy as np
 import xml.etree.ElementTree as ET
+import xml.dom.minidom as md
 import os
 
 
@@ -13,13 +14,15 @@ def read_xml(filename):
 
 
 def write_xml(root, filename):
-    ET.indent(root, "  ")
-    tree = ET.ElementTree(root)
+    # coud use the following and remove dom, but ET.indent is a python 3.9 feature
+    # ET.indent(root, "  ")
     xmlstr = ET.tostring(
         root, encoding="utf8", method="xml", xml_declaration=True
     ).decode("utf-8")
+    dom = md.parseString(xmlstr)
+    pretty_xmlstr = dom.toprettyxml()
     with open(filename, "w+") as f:
-        f.write(xmlstr)
+        f.write(pretty_xmlstr)
         f.write("\n")
 
 
