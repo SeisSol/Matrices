@@ -121,7 +121,30 @@ class dr_generator:
 
         return np.linalg.solve(mass, np.dot(matrix.T, W))
 
+    def quadpoints(self):
+        points, _ = gauss_jacobi_quadrature_2d(self.order + 1)
+        return points.reshape(((self.order+1)**2, 2))
+
+    def quadweights(self):
+        _, weights = gauss_jacobi_quadrature_2d(self.order + 1)
+        return weights.reshape((1, (self.order+1)**2))
+
 
 if __name__ == "__main__":
-    generator = dr_generator(3)
-    print(generator.V3mTo2n(0, 0))
+    generator = dr_generator(2)
+    from seissol_matrices import json_io
+
+    filename = "dr_jacobi_matrices_2.json"
+
+    for a in range(0, 4):
+        for b in range(0, 4):
+            V3mTo2n = generator.V3mTo2n(a, b)
+            V3mTo2nTWDivM = generator.V3mTo2nTWDivM(a, b)
+            quadpoints = generator.quadpoints()
+            quadweights = generator.quadweights()
+            json_io.write_matrix(V3mTo2n, f"V3mTo2n({a},{b})", filename)
+            json_io.write_matrix(V3mTo2nTWDivM, f"V3mTo2nTWDivM({a},{b})", filename)
+            json_io.write_matrix(quadpoints, "quadpoints", filename)
+            json_io.write_matrix(quadweights, "quadweights", filename)
+
+
