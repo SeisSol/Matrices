@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import os
+import re
 
 
 def read_json(filename):
@@ -9,9 +10,12 @@ def read_json(filename):
     file_txt = " ".join([line for line in lines])
     return json.loads(file_txt)
 
+
 def write_json(content, filename):
+    file_content = json.dumps(content, indent="  ")
+    file_content = re.sub(r"\n  \s+", " ", file_content)
     with open(filename, "w+") as f:
-        json.dump(content, f)
+        f.write(file_content)
 
 
 def create_empty_json_file(filename):
@@ -23,14 +27,14 @@ def write_matrix(matrix, matrixname, filename):
         create_empty_json_file(filename)
 
     matrix_list = read_json(filename)
-    assert(isinstance(matrix_list, list))
+    assert isinstance(matrix_list, list)
 
     rows, columns = matrix.shape
     entries = []
     for r in range(rows):
         for c in range(columns):
             if np.abs(matrix[r, c]) > 1e-14:
-                entries.append([r+1, c+1, str(matrix[r, c])])
+                entries.append([r + 1, c + 1, str(matrix[r, c])])
     m = {"name": matrixname, "rows": rows, "columns": columns, "entries": entries}
     matrix_list.append(m)
     write_json(matrix_list, filename)
