@@ -25,67 +25,67 @@ class dr_generator:
                 i = k * n + l
                 for j in range(m):
                     if a == 0 and b == 0:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[1], p[0], 0], j
                         )
                     if a == 0 and b == 1:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[0], p[1], 0], j
                         )
                     if a == 0 and b == 2:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[1], 1 - p[0] - p[1], 0], j
                         )
                     if a == 0 and b == 3:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [1 - p[0] - p[1], p[0], 0], j
                         )
                     if a == 1 and b == 0:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[0], 0, p[1]], j
                         )
                     if a == 1 and b == 1:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[1], 0, p[0]], j
                         )
                     if a == 1 and b == 2:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [1 - p[0] - p[1], 0, p[1]], j
                         )
                     if a == 1 and b == 3:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[0], 0, 1 - p[0] - p[1]], j
                         )
                     if a == 2 and b == 0:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [0, p[1], p[0]], j
                         )
                     if a == 2 and b == 1:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [0, p[0], p[1]], j
                         )
                     if a == 2 and b == 2:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [0, p[1], 1 - p[0] - p[1]], j
                         )
                     if a == 2 and b == 3:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [0, 1 - p[0] - p[1], p[0]], j
                         )
                     if a == 3 and b == 0:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [1 - p[0] - p[1], p[0], p[1]], j
                         )
                     if a == 3 and b == 1:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [1 - p[0] - p[1], p[1], p[0]], j
                         )
                     if a == 3 and b == 2:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[0], 1 - p[0] - p[1], p[1]], j
                         )
                     if a == 3 and b == 3:
-                        matrix[n * n - i - 1, j] = self.bf_generator.eval_basis(
+                        matrix[i, j] = self.bf_generator.eval_basis(
                             [p[1], p[0], 1 - p[0] - p[1]], j
                         )
         return matrix
@@ -99,20 +99,18 @@ class dr_generator:
         for k in range(n):
             for l in range(n):
                 i = k * n + l
-                W[n * n - 1 - i, n * n - 1 - i] = weights[k, l]
+                W[i, i] = weights[k, l]
 
         return np.linalg.solve(mass, np.dot(matrix.T, W))
 
     def quadpoints(self):
         points = self.quadrule.points(self.order + 1)
         points = points.reshape(((self.order + 1) ** 2, 2))
-        points = points[::-1, :]
         return points
 
     def quadweights(self):
         weights = self.quadrule.weights(self.order + 1)
         weights = weights.reshape(((self.order + 1) ** 2, 1))
-        weights = weights[::-1, :]
         return weights
 
 

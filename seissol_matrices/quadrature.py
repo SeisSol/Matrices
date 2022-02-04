@@ -14,7 +14,7 @@ class quadrature(ABC):
 class gauss_jacobi(quadrature):
     def gauss_jacobi_quadrature_1d(self, n, a, b):
         gauss_jacobi_rule = qp.c1.gauss_jacobi(n, a, b)
-        return gauss_jacobi_rule.points, gauss_jacobi_rule.weights
+        return gauss_jacobi_rule.points[::-1], gauss_jacobi_rule.weights[::-1]
 
     def points(self, n):
         points0, weights0 = self.gauss_jacobi_quadrature_1d(n, 0, 0)
