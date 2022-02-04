@@ -12,29 +12,15 @@ from tests import helper
 
 
 class abstract_tester(object):
-    def test_V3mTo2n(self):
-        for a in range(0, 4):
-            for b in range(0, 4):
-                V3mTo2n = self.generator.V3mTo2n(a, b)
-                V3mTo2n_from_file = json_io.read_matrix(
-                    f"V3mTo2n({a},{b})", self.filename
-                )
-                self.compare_matrices(V3mTo2n, V3mTo2n_from_file)
-
-    def test_V3mTo2nTWDivM(self):
-        np.set_printoptions(linewidth=200)
-        for a in range(4):
-            for b in range(4):
-                V3mTo2nTWDivM = self.generator.V3mTo2nTWDivM(a, b)
-                V3mTo2nTWDivM_from_file = json_io.read_matrix(
-                    f"V3mTo2nTWDivM({a},{b})", self.filename
-                )
-                self.compare_matrices(V3mTo2nTWDivM, V3mTo2nTWDivM_from_file)
+    def test_resample(self):
+        resample = self.generator.resample()
+        resample_from_file = json_io.read_matrix("resample", self.filename)
+        self.compare_matrices(resample, resample_from_file)
 
 
 def setUpClassFromOrder(cls, order):
-    cls.filename = f"dr_quadrature_matrices_{order}.json"
-    url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/master/generated_code/matrices/dr_quadrature_matrices_{order}.json"
+    cls.filename = f"resample_{order}.json"
+    url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/master/generated_code/matrices/resample_{order}.json"
     r = requests.get(url, allow_redirects=True)
     open(cls.filename, "wb").write(r.content)
     cls.order = order
