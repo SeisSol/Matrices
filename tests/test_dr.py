@@ -7,6 +7,7 @@ import requests
 
 from seissol_matrices import dr_matrices
 from seissol_matrices import json_io
+from seissol_matrices import quadrature
 from tests import helper
 
 
@@ -37,7 +38,8 @@ def setUpClassFromOrder(cls, order):
     r = requests.get(url, allow_redirects=True)
     open(cls.filename, "wb").write(r.content)
     cls.order = order
-    cls.generator = dr_matrices.dr_generator(cls.order)
+    quadrule = quadrature.gauss_jacobi()
+    cls.generator = dr_matrices.dr_generator(cls.order, quadrule)
 
 
 class test_dr_2(abstract_tester, helper.helper):

@@ -1,39 +1,21 @@
 #!/usr/bin/env python
 
 import numpy as np
-import scipy.special
-import quadpy as qp
 from seissol_matrices import basis_functions
 from seissol_matrices import dg_matrices
-
-
-def gauss_jacobi_quadrature_1d(n, a, b):
-    gauss_jacobi_rule = qp.c1.gauss_jacobi(n, a, b)
-    return gauss_jacobi_rule.points, gauss_jacobi_rule.weights
-
-
-def gauss_jacobi_quadrature_2d(n):
-    points0, weights0 = gauss_jacobi_quadrature_1d(n, 0, 0)
-    points1, weights1 = gauss_jacobi_quadrature_1d(n, 1, 0)
-    points = np.zeros((n, n, 2))
-    weights = np.zeros((n, n))
-    for i in range(n):
-        for j in range(n):
-            points[i, j, 0] = 0.5 * (1.0 + points1[i])
-            points[i, j, 1] = 0.25 * (1.0 + points0[j]) * (1.0 - points1[i])
-            weights[i, j] = weights1[i] * weights0[j] * 0.125
-    return points, weights
+from seissol_matrices import quadrature
 
 
 class dr_generator:
-    def __init__(self, o):
+    def __init__(self, o, q):
         self.order = o
+        self.quadrule = q
         self.bf_generator = basis_functions.BasisFunctionGenerator3D(self.order)
         self.dg_generator = dg_matrices.dg_generator(self.order, 3)
 
     def V3mTo2n(self, a, b):
         m = self.bf_generator.number_of_basis_functions()
-        points, _ = gauss_jacobi_quadrature_2d(self.order + 1)
+        points = self.quadrule.points(self.order + 1)
         n = points.shape[0]
 
         matrix = np.zeros((n * n, m))
@@ -111,7 +93,7 @@ class dr_generator:
     def V3mTo2nTWDivM(self, a, b):
         matrix = self.V3mTo2n(a, b)
         mass = self.dg_generator.mass_matrix()
-        _, weights = gauss_jacobi_quadrature_2d(self.order + 1)
+        weights = self.quadrule.weights(self.order + 1)
         n = weights.shape[0]
         W = np.eye(n * n)
         for k in range(n):
@@ -122,13 +104,13 @@ class dr_generator:
         return np.linalg.solve(mass, np.dot(matrix.T, W))
 
     def quadpoints(self):
-        points, _ = gauss_jacobi_quadrature_2d(self.order + 1)
+        points = self.quadrule.points(self.order + 1)
         points = points.reshape(((self.order + 1) ** 2, 2))
         points = points[::-1, :]
         return points
 
     def quadweights(self):
-        _, weights = gauss_jacobi_quadrature_2d(self.order + 1)
+        weights = self.quadrule.weights(self.order + 1)
         weights = weights.reshape(((self.order + 1) ** 2, 1))
         weights = weights[::-1, :]
         return weights
@@ -137,8 +119,10 @@ class dr_generator:
 if __name__ == "__main__":
     from seissol_matrices import json_io
 
+    quadrule = quadrature.gauss_jacobi()
     for order in range(2, 8):
-        generator = dr_generator(order)
+
+        generator = dr_generator(order, quadrule)
 
         filename = f"dr_jacobi_matrices_{order}.json"
 
