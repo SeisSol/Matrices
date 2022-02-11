@@ -11,4 +11,4 @@ class helper(unittest.TestCase):
         self.assertEqual(a.shape, b.shape)
         for i in range(a.shape[0]):
             for j in range(b.shape[1]):
-                self.assertAlmostEqual(a[i, j], b[i, j], delta=1e-13)
+                self.assertAlmostEqual(a[i, j], b[i, j], delta=1e-11)
