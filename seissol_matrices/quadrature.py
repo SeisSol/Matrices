@@ -17,7 +17,7 @@ class quadrature(ABC):
 class gauss_jacobi(quadrature):
     def __init__(self, n):
         self.n = n
-        self.name = "Jacobi"
+        self.name = "jacobi"
 
     def gauss_jacobi_quadrature_1d(self, a, b):
         gauss_jacobi_rule = qp.c1.gauss_jacobi(self.n, a, b)
@@ -48,26 +48,41 @@ class gauss_jacobi(quadrature):
 class dunavant(quadrature):
     def __init__(self, n):
         self.n = n
-        self.name = "Dunavant"
+        self.name = "dunavant"
 
     def points(self):
-        dunavant = qp.t2.schemes[f"dunavant_0{self.n}"]()
+        dunavant = qp.t2.schemes[f"dunavant_{self.n:02d}"]()
         return dunavant.points[:2, :].T
 
     def weights(self):
-        dunavant = qp.t2.schemes[f"dunavant_0{self.n}"]()
-        return np.reshape(dunavant.weights, (dunavant.weights.shape[0], 1))
+        dunavant = qp.t2.schemes[f"dunavant_{self.n:02d}"]()
+        return 0.5 * np.reshape(dunavant.weights, (dunavant.weights.shape[0], 1))
+
+
+class witherden_vincent(quadrature):
+    def __init__(self, n):
+        # Witherden Vincent Quadratur rule of order 4 does not exist
+        self.n = n if n != 3 else 4
+        self.name = "witherden_vincent"
+
+    def points(self):
+        wv = qp.t2.schemes[f"witherden_vincent_{self.n:02d}"]()
+        return wv.points[:2, :].T
+
+    def weights(self):
+        wv = qp.t2.schemes[f"witherden_vincent_{self.n:02d}"]()
+        return 0.5 * np.reshape(wv.weights, (wv.weights.shape[0], 1))
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    for quadrule in [dunavant(7), gauss_jacobi(7)]:
+    o = 6
+    for quadrule in [witherden_vincent(o + 1), dunavant(o + 1), gauss_jacobi(o + 1)]:
         tri_x = [0, 1, 0, 0]
         tri_y = [0, 0, 1, 0]
         plt.plot(tri_x, tri_y)
         quadpoints = quadrule.points()
-        print(quadpoints)
         plt.scatter(quadpoints[:, 0], quadpoints[:, 1])
         plt.title(quadrule.id())
         plt.show()

@@ -97,22 +97,22 @@ class dr_generator:
         return weights
 
     def resample(self):
-        m = self.bf2_generator.number_of_basis_functions()
+        n = self.bf2_generator.number_of_basis_functions()
         points = self.quadrule.points()
         weights = self.quadrule.weights()
-        n = weights.shape[0]
+        m = weights.shape[0]
 
         E = np.zeros((n, m))
-        for i, p in enumerate(points):
-            for j in range(m):
-                E[i, j] = self.bf2_generator.eval_basis(p, j)
-        W = np.eye(n)
         for i in range(n):
+            for j, p in enumerate(points):
+                E[i, j] = self.bf2_generator.eval_basis(p, i)
+        W = np.eye(m)
+        for i in range(m):
             W[i, i] = weights[i]
 
         mass = self.dg2_generator.mass_matrix()
 
-        return np.dot(E, np.linalg.solve(mass, np.dot(E.T, W)))
+        return np.dot(E.T, np.linalg.solve(mass, np.dot(E, W)))
 
 
 if __name__ == "__main__":
@@ -122,12 +122,11 @@ if __name__ == "__main__":
         for quadrule in [
             quadrature.gauss_jacobi(order + 1),
             quadrature.dunavant(order + 1),
+            quadrature.witherden_vincent(order + 1),
         ]:
             generator = dr_generator(order, quadrule)
 
             filename = f"dr_{quadrule.name}_matrices_{order}.json"
-            print(generator.resample())
-
             quadpoints = generator.quadpoints()
             quadweights = generator.quadweights()
             resample = generator.resample()
