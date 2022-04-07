@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Prepare environment
-        run: pip install nose2 coverage numpy scipy quadpy orthopy
+        run: pip install nose2 coverage numpy scipy quadpy orthopy ndim
 
       - name: Unit tests and coverage
         run: coverage run -m nose2
