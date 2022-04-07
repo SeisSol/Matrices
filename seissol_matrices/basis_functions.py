@@ -3,62 +3,68 @@ import numpy as np
 import scipy.special as sp_special
 
 # based on the appendix of Josep de la Puente's thesis
+# and the singuality free implementation in
+# https://github.com/SeisSol/SeisSol/blob/master/src/Numerical_aux/Functions.cpp
 
 
-def theta_a(x, i):
-    return sp_special.jacobi(i, 0, 0)(x)
+def singularity_free_jacobi_polynomial_factors(m, a, b):
+    c_0 = 2.0 * m + a + b
+    c_1 = c_0 - 1.0
+    c_2 = a * a - b * b
+    c_3 = c_0 * (c_0 - 2.0)
+    c_4 = 2.0 * (m + a - 1.0) * (m + b - 1.0) * c_0
+    c_5 = 2.0 * m * (m + a + b) * (c_0 - 2.0)
+    return c_1, c_2, c_3, c_4, c_5
 
 
-def diff_theta_a(x, i):
-    if i == 0:
-        return 0
-    else:
-        return 0.5 * (i + 1) * sp_special.jacobi(i - 1, 1, 1)(x)
-    return 1
+def singularity_free_jacobi_polynomial_recursion(x, y, factors, pm_1, pm_2):
+    return (
+        factors[0] * (factors[1] * y + factors[2] * x) * pm_1
+        - factors[3] * y * y * pm_2
+    ) / factors[4]
 
 
-def theta_b(x, i, j):
-    return ((1.0 - x) / 2.0) ** i * sp_special.jacobi(j, 2 * i + 1, 0)(x)
+def singularity_free_jacobi_polynomial(n, a, b, x, y):
+    if n == 0:
+        return np.ones(np.shape(x))
+
+    pm_1 = 1.0
+    pm = (0.5 * a - 0.5 * b) * y + (1.0 + 0.5 * (a + b)) * x
+    for m in range(2, n + 1):
+        pm_2 = pm_1
+        pm_1 = pm
+        c = singularity_free_jacobi_polynomial_factors(m, a, b)
+        pm = singularity_free_jacobi_polynomial_recursion(x, y, c, pm_1, pm_2)
+    return pm
 
 
-def diff_theta_b(x, i, j):
-    if i == 0 and j == 0:
-        return 0
-    elif i == 0:
-        return 0.5 * (j + 2) * sp_special.jacobi(j - 1, 2, 1)(x)
-    elif j == 0:
-        return -0.5 * i * ((1.0 - x) / 2.0) ** (i - 1)
-    else:
-        return -0.5 * i * ((1.0 - x) / 2.0) ** (i - 1) * sp_special.jacobi(
-            j, 2 * i + 1, 0
-        )(x) + ((1.0 - x) / 2.0) ** i * 0.5 * (j + 2 * i + 2) * sp_special.jacobi(
-            j - 1, 2 * i + 2, 1
-        )(
-            x
-        )
-
-
-def theta_c(x, i, j, k):
-    return ((1.0 - x) / 2.0) ** (i + j) * sp_special.jacobi(k, 2 * i + 2 * j + 2, 0)(x)
-
-
-def diff_theta_c(x, i, j, k):
-    if i + j == 0 and k == 0:
-        return 0
-    elif i + j == 0:
-        return 0.5 * (k + 3) * sp_special.jacobi(k - 1, 3, 1)(x)
-    elif k == 0:
-        return -0.5 * (i + j) * ((1.0 - x) / 2.0) ** (i + j - 1)
-    else:
-        return -0.5 * (i + j) * ((1.0 - x) / 2.0) ** (i + j - 1) * sp_special.jacobi(
-            k, 2 * i + 2 * j + 2, 0
-        )(x) + ((1.0 - x) / 2.0) ** (i + j) * 0.5 * (
-            k + 2 * j + 2 * i + 3
-        ) * sp_special.jacobi(
-            k - 1, 2 * i + 2 * j + 3, 1
-        )(
-            x
-        )
+def singularity_free_jacobi_polynomial_and_derivatives(n, a, b, x, y):
+    if n == 0:
+        return 1.0, 0.0, 0.0
+    pm_1 = 1.0
+    ddx_pm_1 = 0.0
+    ddy_pm_1 = 0.0
+    pm = singularity_free_jacobi_polynomial(1, a, b, x, y)
+    ddx_pm = 1.0 + 0.5 * (a + b)
+    ddy_pm = 0.5 * (a - b)
+    for m in range(2, n + 1):
+        pm_2 = pm_1
+        pm_1 = pm
+        ddx_pm_2 = ddx_pm_1
+        ddx_pm_1 = ddx_pm
+        ddy_pm_2 = ddy_pm_1
+        ddy_pm_1 = ddy_pm
+        c = singularity_free_jacobi_polynomial_factors(m, a, b)
+        pm = singularity_free_jacobi_polynomial_recursion(x, y, c, pm_1, pm_2)
+        ddx_pm = (
+            c[0] * (c[2] * pm_1 + (c[1] * y + c[2] * x) * ddx_pm_1)
+            - c[3] * y * y * ddx_pm_2
+        ) / c[4]
+        ddy_pm = (
+            c[0] * (c[1] * pm_1 + (c[1] * y + c[2] * x) * ddy_pm_1)
+            - c[3] * (2.0 * y * pm_2 + y * y * ddy_pm_2)
+        ) / c[4]
+    return pm, ddx_pm, ddy_pm
 
 
 ################################################################################
@@ -69,14 +75,14 @@ class BasisFunctionGenerator(ABC):
         self.order = order
 
     # computes phi_x(x)
-    def eval_basis(x, i):
+    def eval_basis(self, x, i):
         pass
 
     # computes d / d_x_k phi_i (x)
-    def eval_diff_basis(x, i, k):
+    def eval_diff_basis(self, x, i, k):
         pass
 
-    def number_of_basis_functions(o):
+    def number_of_basis_functions(self, o):
         pass
 
 
@@ -84,17 +90,22 @@ class BasisFunctionGenerator(ABC):
 
 
 class BasisFunctionGenerator1D(BasisFunctionGenerator):
-    def coordinate_transformation(self, x):
-        return 2 * x - 1
-
     def eval_basis(self, x, i):
-        r = self.coordinate_transformation(x)
-        return theta_a(r, i)
+        r_num = 2 * x - 1.0
+        r_den = 1.0
+        return singularity_free_jacobi_polynomial(i, 0, 0, r_num, r_den)
 
     def eval_diff_basis(self, x, i, k):
-        # it's a bit easier here :D
-        r = self.coordinate_transformation(x)
-        return 2 * diff_theta_a(r, i)
+        if n == 0:
+            return 0
+        else:
+            r_num = 2 * x - 1.0
+            r_den = 1.0
+            return (
+                2
+                * (i + 1)
+                * singularity_free_jacobi_polynomial(i - 1, 1, 1, r_num, r_den)
+            )
 
     def number_of_basis_functions(self):
         return self.order
@@ -104,11 +115,6 @@ class BasisFunctionGenerator1D(BasisFunctionGenerator):
 
 
 class BasisFunctionGenerator2D(BasisFunctionGenerator):
-    def coordinate_transformation(self, x):
-        r = np.divide(2 * x[0], 1 - x[1]) - 1
-        s = 2 * x[1] - 1
-        return (r, s)
-
     def unroll_index(self, i):
         n = i[0] + i[1]
         tri = 0.5 * n * (n + 1)
@@ -123,8 +129,41 @@ class BasisFunctionGenerator2D(BasisFunctionGenerator):
 
     def eval_basis(self, x, i):
         j = self.roll_index(i)
-        r, s = self.coordinate_transformation(x)
-        return theta_a(r, j[0]) * theta_b(s, j[0], j[1])
+        r_num = 2.0 * x[0] - 1.0 + x[1]
+        r_den = 1.0 - x[1]
+        s_num = 2.0 * x[1] - 1.0
+        s_den = 1.0
+
+        t_i = singularity_free_jacobi_polynomial(j[0], 0, 0, r_num, r_den)
+        t_ij = singularity_free_jacobi_polynomial(j[1], 2 * j[0] + 1, 0, s_num, s_den)
+
+        return t_i * t_ij
+
+    def eval_diff_basis(self, x, i, k):
+        j = self.roll_index(i)
+        r_num = 2.0 * x[0] - 1.0 + x[1]
+        r_den = 1.0 - x[1]
+        s_num = 2.0 * x[1] - 1.0
+        s_den = 1.0
+
+        t_i = singularity_free_jacobi_polynomial_and_derivatives(
+            j[0], 0, 0, r_num, r_den
+        )
+        t_ij = singularity_free_jacobi_polynomial_and_derivatives(
+            j[1], 2 * j[0] + 1, 0, s_num, s_den
+        )
+
+        d_dalpha = (
+            lambda dr_num, dr_den, d_t: (t_i[1] * dr_num + t_i[2] * dr_den) * t_ij[0]
+            + t_i[0] * t_ij[1] * d_t
+        )
+
+        if k == 0:
+            return d_dalpha(2.0, 0.0, 0.0)
+        elif k == 1:
+            return d_dalpha(1.0, -1.0, 2.0)
+        else:
+            raise Exception(f"Can't take the derivative in the {k}th direction.")
 
     def number_of_basis_functions(self):
         return self.order * (self.order + 1) // 2
@@ -134,34 +173,10 @@ class BasisFunctionGenerator2D(BasisFunctionGenerator):
 
 
 class BasisFunctionGenerator3D(BasisFunctionGenerator):
-    def coordinate_transformation(self, x):
-        r = np.divide(2 * x[0], 1 - x[1] - x[2]) - 1
-        s = np.divide(2 * x[1], 1 - x[2]) - 1
-        t = 2 * x[2] - 1
-        return (r, s, t)
-
-    def diff_coordinate_transformation(self, x, i):
-        if i == 0:
-            return (np.divide(2, 1 - x[1] - x[2]), 0, 0)
-        elif i == 1:
-            return (
-                np.divide(2 * x[0], (1 - x[1] - x[2]) ** 2),
-                np.divide(2, 1 - x[2]),
-                0,
-            )
-        elif i == 2:
-            return (
-                np.divide(2 * x[0], (1 - x[1] - x[2]) ** 2),
-                np.divide(2 * x[1], (1 - x[2]) ** 2),
-                2,
-            )
-        else:
-            raise Exception("Can't take the derivative in the {}th direction".format(i))
-
     def unroll_index(self, i):
-        n = i[0] + i[1] + j[2]
+        n = i[0] + i[1] + i[2]
         tet = (n * (n + 1) * (n + 2)) / 6.0
-        p = j[2] * (n + 1) - j[2] * (j[2] - 1) / 2
+        p = i[2] * (n + 1) - i[2] * (i[2] - 1) / 2
         return int(tet + i[1] + p)
 
     def roll_index(self, x):
@@ -183,27 +198,58 @@ class BasisFunctionGenerator3D(BasisFunctionGenerator):
 
     def eval_basis(self, x, i):
         j = self.roll_index(i)
-        r, s, t = self.coordinate_transformation(x)
-        return theta_a(r, j[0]) * theta_b(s, j[0], j[1]) * theta_c(t, j[0], j[1], j[2])
+        r_num = 2.0 * x[0] - 1.0 + x[1] + x[2]
+        r_den = 1.0 - x[1] - x[2]
+        s_num = 2.0 * x[1] - 1.0 + x[2]
+        s_den = 1.0 - x[2]
+        t_num = 2.0 * x[2] - 1.0
+        t_den = 1.0
+
+        t_i = singularity_free_jacobi_polynomial(j[0], 0, 0, r_num, r_den)
+        t_ij = singularity_free_jacobi_polynomial(j[1], 2 * j[0] + 1, 0, s_num, s_den)
+        t_ijk = singularity_free_jacobi_polynomial(
+            j[2], 2 * j[0] + 2 * j[1] + 2, 0, t_num, 1.0
+        )
+
+        return t_i * t_ij * t_ijk
 
     def eval_diff_basis(self, x, i, k):
         j = self.roll_index(i)
-        r, s, t = self.coordinate_transformation(x)
-        diff_r, diff_s, diff_t = self.diff_coordinate_transformation(x, k)
-        return (
-            diff_theta_a(r, j[0])
-            * diff_r
-            * theta_b(s, j[0], j[1])
-            * theta_c(t, j[0], j[1], j[2])
-            + theta_a(r, j[0])
-            * diff_theta_b(s, j[0], j[1])
-            * diff_s
-            * theta_c(t, j[0], j[1], j[2])
-            + theta_a(r, j[0])
-            * theta_b(s, j[0], j[1])
-            * diff_theta_c(t, j[0], j[1], j[2])
-            * diff_t
+        r_num = 2.0 * x[0] - 1.0 + x[1] + x[2]
+        s_num = 2.0 * x[1] - 1.0 + x[2]
+        t_num = 2.0 * x[2] - 1.0
+        r_den = 1.0 - x[1] - x[2]
+        s_den = 1.0 - x[2]
+        t_den = 1.0
+
+        t_i = singularity_free_jacobi_polynomial_and_derivatives(
+            j[0], 0, 0, r_num, r_den
         )
+        t_ij = singularity_free_jacobi_polynomial_and_derivatives(
+            j[1], 2 * j[0] + 1, 0, s_num, s_den
+        )
+        t_ijk = singularity_free_jacobi_polynomial_and_derivatives(
+            j[2], 2 * j[0] + 2 * j[1] + 2, 0, t_num, t_den
+        )
+
+        d_dalpha = (
+            lambda dr_num, dr_den, ds_num, ds_den, dt: (
+                t_i[1] * dr_num + t_i[2] * dr_den
+            )
+            * t_ij[0]
+            * t_ijk[0]
+            + t_i[0] * (t_ij[1] * ds_num + t_ij[2] * ds_den) * t_ijk[0]
+            + t_i[0] * t_ij[0] * (t_ijk[1] * dt)
+        )
+
+        if k == 0:
+            return d_dalpha(2.0, 0.0, 0.0, 0.0, 0.0)
+        elif k == 1:
+            return d_dalpha(1.0, -1.0, 2.0, 0.0, 0.0)
+        elif k == 2:
+            return d_dalpha(1.0, -1.0, 1.0, -1.0, 2.0)
+        else:
+            raise Exception(f"Can't take the derivative in the {k}th direction.")
 
     def number_of_basis_functions(self):
         return self.order * (self.order + 1) * (self.order + 2) // 6
