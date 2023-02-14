@@ -3,6 +3,7 @@ import quadpy as qp
 
 from seissol_matrices import basis_functions
 
+
 ### Generates matrices which are of general interest for DG methods:
 ### Mass and Stiffness matrices
 ### kDivM and kDivMT which are SeisSol specific

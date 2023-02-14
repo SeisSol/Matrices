@@ -66,7 +66,6 @@ def read_matrix(matrixname, filename):
         raise ValueError("Root element is not `matrices`")
 
     for matrix_root in root:
-
         if matrix_root.tag == "matrix" and matrix_root.attrib["name"] == matrixname:
             rows = int(matrix_root.attrib["rows"])
             columns = int(matrix_root.attrib["columns"])

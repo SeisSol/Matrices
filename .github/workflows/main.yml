@@ -14,10 +14,25 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Prepare environment
         run: pip install nose2 coverage numpy scipy quadpy orthopy ndim
 
       - name: Unit tests and coverage
         run: coverage run -m nose2
+
+  coding-style:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Prepare environment
+        run: pip install black
+
+      - name: Coding style
+        run: |
+          black --check seissol_matrices
+          black --check tests
