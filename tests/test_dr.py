@@ -34,7 +34,8 @@ class abstract_tester(object):
 
 def setUpClassFromOrder(cls, order):
     cls.filename = f"dr_quadrature_matrices_{order}.json"
-    url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/master/generated_code/matrices/dr_quadrature_matrices_{order}.json"
+    # point to some old commit
+    url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/c99ca8f814b7184eb435272f9d4f63b03b8b6cf4/generated_code/matrices/dr_quadrature_matrices_{order}.json"
     r = requests.get(url, allow_redirects=True)
     open(cls.filename, "wb").write(r.content)
     cls.order = order

@@ -51,7 +51,8 @@ class abstract_tester(object):
 def setUpClassFromOrder(cls, order):
     number_of_basis_functions = order * (order + 1) * (order + 2) // 6
     cls.filename = f"matrices_{number_of_basis_functions}.xml"
-    url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/master/generated_code/matrices/matrices_{number_of_basis_functions}.xml"
+    # point to some old commit
+    url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/c99ca8f814b7184eb435272f9d4f63b03b8b6cf4/generated_code/matrices/matrices_{number_of_basis_functions}.xml"
     r = requests.get(url, allow_redirects=True)
     open(cls.filename, "wb").write(r.content)
     cls.order = order
