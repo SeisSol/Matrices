@@ -4,10 +4,12 @@ import numpy as np
 import os
 from seissol_matrices import basis_functions, dg_matrices, quadrature, json_io
 
+
 def parse_nodes(filename):
     with open(filename) as f:
         lines = [[float(e) for e in l.rstrip().split()] for l in f]
         return np.array(lines)
+
 
 class NodalBoundaryGenerator:
     def __init__(self, order):
@@ -44,6 +46,7 @@ class NodalBoundaryGenerator:
 
     def generate_V3mTo2nFace(self, faceid):
         return self.vandermonde @ self.rTs[faceid]
+
 
 def main():
     for order in range(2, 8):

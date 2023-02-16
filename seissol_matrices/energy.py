@@ -6,6 +6,7 @@ from seissol_matrices import basis_functions, quadrature, xml_io
 import json
 import sys
 
+
 def generate_V2mTo2n(order, quadrule):
     bf2_generator = basis_functions.BasisFunctionGenerator2D(order)
     m = bf2_generator.number_of_basis_functions()
