@@ -2,7 +2,10 @@
 name = "seissol-matrices"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = [
+    "Sebastian Wolf <wolf.sebastian@in.tum.de>",
+    "Lukas Krenz <lukas.krenz@in.tum.de>",
+]
 readme = "README.md"
 packages = [{include = "seissol_matrices"}]
 
