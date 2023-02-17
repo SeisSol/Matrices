@@ -24,7 +24,7 @@ def generate_V2mTo2n(order, quadrule):
 
 def main():
     for order in range(2, 8):
-        output_file = f"energy_matrices_out/gravitational_energy_matrices_{order}.xml"
+        output_file = f"output/gravitational_energy_matrices_{order}.xml"
 
         quadrule = quadrature.gauss_jacobi(order + 1)
         V2mTo2n = generate_V2mTo2n(order=order, quadrule=quadrule)
