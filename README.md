@@ -1,4 +1,4 @@
-![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sebwolf-de/b9c4e4cac4b1c91e4645e5a319e18c9a/raw/125dd57c9ec76e3ad149995e4e37a303e6e00c31/seissol-matrices.json)
+![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/sebwolf-de/b9c4e4cac4b1c91e4645e5a319e18c9a/raw/19983ec92c5951ee8eee983fb7bc51e316bc3017/seissol-matrices.json)
 
 # SeisSol Matrices #
 
