@@ -28,7 +28,7 @@ jobs:
         run: | 
           pip install coverage-badge
           cov=$(coverage report | grep TOTAL | awk '{print $4}')
-          echo "ANSWER=${cov:0:-1}" >> $GITHUB_ENV
+          echo "COVERAGE=${cov:0:-1}" >> $GITHUB_ENV
 
       - name: Publish Coverage Report
         uses: actions/upload-artifact@v3
