@@ -13,11 +13,14 @@ If we use basis functions for order $\mathcal{O}$, we have $\frac{1}{6} \times \
 
 ## Matrices ##
 
+We use $T^3$ to denote the unit tetrahedron and $T^2$ to denote the unit triangle.
+With $T^2_j$, we denote the $j$ th face of the unit tetrahedron.
+
 ### Discountinuos Galerkin matrices ###
 
 
 | Notation           | Formula                                       | SeisSol            |
 | ------------------ | --------------------------------------------- | ------------------ |
-| $M_{kl}$           | $\int_T \Psi_k \Psi_l dx$                     | `M3`               |
-|                    | $\int_T \Phi_k \Phi_l dx$                     | `M2`               |
-| $F_{kl}^{-,j}$     | $\int_T \Psi_k \Psi_l dx$                     | `rT`               |
+| $M_{kl}$           | $\int_{T^3} \Psi_k \Psi_l dx$                 | `M3`               |
+|                    | $\int_{T^2} \Phi_k \Phi_l dx$                 | `M2`               |
+| $F_{kl}^{-,j}$     | $\int_{T^2_j} \Psi_k \Psi_l dx$               | `rT`               |
