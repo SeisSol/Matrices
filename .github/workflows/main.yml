@@ -27,7 +27,8 @@ jobs:
       - name: Code Coverage Report
         run: | 
           pip install coverage-badge
-          coverage-badge -o coverage.svg
+          cov=$(coverage report | grep TOTAL | awk '{print $4}')
+          echo "ANSWER=${cov:0:-1}" >> $GITHUB_ENV
 
       - name: Publish Coverage Report
         uses: actions/upload-artifact@v3
@@ -40,9 +41,11 @@ jobs:
           auth: ${{ secrets.SEISSOL_MATRICES_GIST }}
           gistID: b9c4e4cac4b1c91e4645e5a319e18c9a
           filename: seissol-matrices.json
-          label: Hello
-          message: World
-          color: orange
+          label: Coverage
+          message: ${{ env.COVERAGE }}
+          valColorRange: ${{ env.COVERAGE }}
+          maxColorRange: 100
+          minColorRange: 0k
 
   coding-style:
     runs-on: ubuntu-latest
