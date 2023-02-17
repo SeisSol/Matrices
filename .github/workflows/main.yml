@@ -39,7 +39,7 @@ jobs:
         with:
           auth: ${{ secrets.SEISSOL_MATRICES_GIST }}
           gistID: b9c4e4cac4b1c91e4645e5a319e18c9a
-          filename: test.json
+          filename: seissol-matrices.json
           label: Hello
           message: World
           color: orange
