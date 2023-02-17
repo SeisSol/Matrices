@@ -44,8 +44,6 @@ jobs:
           message: World
           color: orange
 
-
-
   coding-style:
     runs-on: ubuntu-latest
 
