@@ -29,6 +29,7 @@ jobs:
           pip install coverage-badge
           coverage report --omit "/usr/*"
           cov=$(coverage report --omit "usr/*" | grep TOTAL | awk '{print $4}')
+          echo $cov
           echo "COVERAGE=${cov:0:-1}" >> $GITHUB_ENV
 
       - name: Create Awesome Badge
