@@ -20,7 +20,21 @@ jobs:
         run: pip install nose2 coverage numpy scipy quadpy orthopy ndim
 
       - name: Unit tests and coverage
-        run: coverage run -m nose2
+        run: | 
+          coverage run -m nose2
+          coverage xml
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '60 80'
 
   coding-style:
     runs-on: ubuntu-latest
