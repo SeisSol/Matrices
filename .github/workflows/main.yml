@@ -42,6 +42,7 @@ jobs:
           valColorRange: ${{ env.COVERAGE }}
           maxColorRange: 100
           minColorRange: 0k
+          forceUpdate: true
 
   coding-style:
     runs-on: ubuntu-latest
