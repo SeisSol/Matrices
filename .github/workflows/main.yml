@@ -27,14 +27,10 @@ jobs:
       - name: Code Coverage Report
         run: | 
           pip install coverage-badge
+          coverage report
           cov=$(coverage report | grep TOTAL | awk '{print $4}')
           echo "COVERAGE=${cov:0:-1}" >> $GITHUB_ENV
 
-      - name: Publish Coverage Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: coverage.svg
       - name: Create Awesome Badge
         uses: schneegans/dynamic-badges-action@v1.6.0
         with:
