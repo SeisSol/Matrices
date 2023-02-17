@@ -25,7 +25,16 @@ jobs:
           coverage xml
 
       - name: Code Coverage Report
-        uses: tj-actions/coverage-badge-py@v1.8
+        run: | 
+          pip install coverage-badge
+          coverage-badge -o coverage.svg
+
+      - name: Publish Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.svg
+
 
   coding-style:
     runs-on: ubuntu-latest
