@@ -27,8 +27,8 @@ jobs:
       - name: Code Coverage Report
         run: | 
           pip install coverage-badge
-          coverage report
-          cov=$(coverage report | grep TOTAL | awk '{print $4}')
+          coverage report --omit "/usr/*"
+          cov=$(coverage report --omit "usr/*" | grep TOTAL | awk '{print $4}')
           echo "COVERAGE=${cov:0:-1}" >> $GITHUB_ENV
 
       - name: Create Awesome Badge
