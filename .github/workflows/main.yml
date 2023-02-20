@@ -20,7 +20,30 @@ jobs:
         run: pip install nose2 coverage numpy scipy quadpy orthopy ndim
 
       - name: Unit tests and coverage
-        run: coverage run -m nose2
+        run: | 
+          coverage run -m nose2
+          coverage xml
+
+      - name: Code Coverage Report
+        run: | 
+          pip install coverage-badge
+          coverage report --omit "/usr/*"
+          cov=$(coverage report --omit "/usr/*" | grep TOTAL | awk '{print $4}')
+          echo $cov
+          echo "COVERAGE=${cov:0:-1}" >> $GITHUB_ENV
+
+      - name: Create Awesome Badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        with:
+          auth: ${{ secrets.SEISSOL_MATRICES_GIST }}
+          gistID: b9c4e4cac4b1c91e4645e5a319e18c9a
+          filename: seissol-matrices.json
+          label: Coverage
+          message: ${{ env.COVERAGE }}
+          valColorRange: ${{ env.COVERAGE }}
+          maxColorRange: 100
+          minColorRange: 0k
+          forceUpdate: true
 
   coding-style:
     runs-on: ubuntu-latest
