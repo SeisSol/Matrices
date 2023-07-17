@@ -1,5 +1,9 @@
 import numpy as np
-import quadpy as qp
+#import quadpy as qp
+import quad_rules.WitherdenVincentTri
+import quad_rules.WitherdenVincentTet
+import quad_rules.GaussJacobi
+import quad_rules.quadrature
 
 from seissol_matrices import basis_functions
 
@@ -14,25 +18,26 @@ class dg_generator:
 
         if self.dim == 3:
             self.generator = basis_functions.BasisFunctionGenerator3D(self.order)
-            self.scheme = qp.t3.get_good_scheme(self.order * 2)
-            self.geometry = [
+            self.geometry = np.array([
                 [0.0, 0.0, 0.0],
                 [1.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0],
                 [0.0, 0.0, 1.0],
-            ]
+            ])
             self.face_generator = dg_generator(o, 2)
+            n, w = quad_rules.WitherdenVincentTet.WitherdenVincentTet().find_best_rule(self.order)
         elif self.dim == 2:
             self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
-            self.scheme = qp.t2.get_good_scheme(self.order * 2)
-            self.geometry = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
+            self.geometry = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+            n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(2 * self.order)
         elif self.dim == 1:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
-            self.scheme = qp.c1.gauss_legendre(self.order + 1)
-            self.geometry = [0.0, 1.0]
+            self.geometry = np.array([[0.0], [1.0]])
+            n, w = quad_rules.GaussJacobi.GaussJacobi().find_best_rule(2 * self.order)
         else:
             raise Execption("Can only generate 1D, 2D or 2D basis functions")
 
+        self.nodes, self.weights = quad_rules.quadrature.transform(n, w, self.geometry)
         self.M = None
         self.K = self.dim * [None]
 
@@ -47,7 +52,7 @@ class dg_generator:
                 prod = lambda x: self.generator.eval_basis(
                     x, i
                 ) * self.generator.eval_basis(x, j)
-                self.M[i, j] = self.scheme.integrate(prod, self.geometry)
+                self.M[i, j] = quad_rules.quadrature.quad(self.nodes, self.weights, prod)
         return self.M
 
     def stiffness_matrix(self, dim):
@@ -61,7 +66,7 @@ class dg_generator:
                 prod = lambda x: self.generator.eval_diff_basis(
                     x, i, dim
                 ) * self.generator.eval_basis(x, j)
-                self.K[dim][i, j] = self.scheme.integrate(prod, self.geometry)
+                self.K[dim][i, j] = quad_rules.quadrature.quad(self.nodes, self.weights, prod)
         return self.K[dim]
 
     def kDivM(self, dim):
