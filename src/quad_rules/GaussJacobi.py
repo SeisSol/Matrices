@@ -73,8 +73,6 @@ if __name__ == "__main__":
     y = [jacobi_polynomial(n, 0, 0, s) for s in x]
     dy = [jacobi_derivative(n, 0, 0, s) for s in x]
     nodes, weights = GaussJacobi(0, 0).compute_nodes_and_weights(n)
-    print(weights)
     plt.plot(x, y)
-    # plt.plot(x, dy)
     plt.scatter(nodes, np.zeros(nodes.shape))
     plt.show()

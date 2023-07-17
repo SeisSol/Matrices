@@ -36,16 +36,13 @@ def transform(nodes, weights, new_corners):
         origin = np.array([-1.0, -1.0, -1.0])
 
     offset = -M @ origin + x_0
-    print(M)
     volume_fraction = np.abs(np.linalg.det(M))
-    print(volume_fraction)
     return np.add(nodes @ M.T, offset), volume_fraction * weights
 
 
 def visualize(nodes, weights, new_corners):
     import matplotlib.pyplot as plt
 
-    print(nodes.shape)
     if nodes.shape[1] == 1:
         plt.scatter(nodes[:], np.zeros(nodes.shape), s=weights * 40)
         plt.plot(
@@ -89,5 +86,4 @@ if __name__ == "__main__":
         return 1
 
     nodes_, weights_ = transform(nodes, weights, new_corners)
-    print(nodes_, weights_)
     visualize(nodes_, weights_, new_corners)
