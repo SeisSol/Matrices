@@ -17,18 +17,24 @@ class dg_generator:
 
         if self.dim == 3:
             self.generator = basis_functions.BasisFunctionGenerator3D(self.order)
-            self.geometry = np.array([
-                [0.0, 0.0, 0.0],
-                [1.0, 0.0, 0.0],
-                [0.0, 1.0, 0.0],
-                [0.0, 0.0, 1.0],
-            ])
+            self.geometry = np.array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            )
             self.face_generator = dg_generator(o, 2)
-            n, w = quad_rules.WitherdenVincentTet.WitherdenVincentTet().find_best_rule(self.order)
+            n, w = quad_rules.WitherdenVincentTet.WitherdenVincentTet().find_best_rule(
+                self.order
+            )
         elif self.dim == 2:
             self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
             self.geometry = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-            n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(2 * self.order)
+            n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
+                2 * self.order
+            )
         elif self.dim == 1:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
             self.geometry = np.array([[0.0], [1.0]])
@@ -51,7 +57,9 @@ class dg_generator:
                 prod = lambda x: self.generator.eval_basis(
                     x, i
                 ) * self.generator.eval_basis(x, j)
-                self.M[i, j] = quad_rules.quadrature.quad(self.nodes, self.weights, prod)
+                self.M[i, j] = quad_rules.quadrature.quad(
+                    self.nodes, self.weights, prod
+                )
         return self.M
 
     def stiffness_matrix(self, dim):
@@ -65,7 +73,9 @@ class dg_generator:
                 prod = lambda x: self.generator.eval_diff_basis(
                     x, i, dim
                 ) * self.generator.eval_basis(x, j)
-                self.K[dim][i, j] = quad_rules.quadrature.quad(self.nodes, self.weights, prod)
+                self.K[dim][i, j] = quad_rules.quadrature.quad(
+                    self.nodes, self.weights, prod
+                )
         return self.K[dim]
 
     def kDivM(self, dim):
@@ -118,7 +128,9 @@ class dg_generator:
                 prod = lambda x: self.face_generator.generator.eval_basis(
                     x, i
                 ) * projected_basis_function(x, j)
-                matrix[i, j] = quad_rules.quadrature.quad(self.face_generator.nodes, self.face_generator.weights, prod)
+                matrix[i, j] = quad_rules.quadrature.quad(
+                    self.face_generator.nodes, self.face_generator.weights, prod
+                )
         return matrix
 
     def fP(self, side):
@@ -164,7 +176,9 @@ class dg_generator:
                 prod = lambda x: self.face_generator.generator.eval_basis(
                     x, i
                 ) * projected_basis_function(x, j)
-                matrix[i, j] = quad_rules.quadrature.quad(self.face_generator.nodes, self.face_generator.weights, prod)
+                matrix[i, j] = quad_rules.quadrature.quad(
+                    self.face_generator.nodes, self.face_generator.weights, prod
+                )
         return matrix
 
     def fMrT(self, side):
