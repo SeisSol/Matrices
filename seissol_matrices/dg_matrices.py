@@ -77,6 +77,11 @@ class dg_generator:
         return np.linalg.solve(mass, stiffness.T)
 
     def face_to_face_parametrisation(self, x, side):
+        # implement Dumbser & Käser, 2006 Table 2 b)
+        # chi = x[0,:]
+        # tau = x[1,:]
+        # y[0,:] = chi ~
+        # y[1,:] = tau ~
         y = np.zeros((x.shape[0], x.shape[1]))
         if side == 0:
             y[0, :] = x[1, :]
@@ -118,6 +123,12 @@ class dg_generator:
         return self.face_times_face_mass_matrix(side)
 
     def volume_to_face_parametrisation(self, x, side):
+        # implement Dumbser & Käser, 2006 Table 2 a)
+        # chi = x[0,:]
+        # tau = x[1,:]
+        # y[0,:] = xi(j)
+        # y[1,:] = eta(j)
+        # y[2,:] = zeta(j)
         y = np.zeros((x.shape[0] + 1, x.shape[1]))
         if side == 0:
             y[0, :] = x[1, :]
@@ -172,7 +183,20 @@ class dg_generator:
 
 
 if __name__ == "__main__":
-    from seissol_matrices import xml_io
+    from seissol_matrices import json_io
 
-    generator = dg_generator(3, 3)
-    xml_io.write_matrix(generator.kDivM(2), "kDivM(2)", "kdivm.xml")
+    # generator = dg_generator(3, 3)
+    # xml_io.write_matrix(generator.kDivM(2), "kDivM(2)", "kdivm.xml")
+    for order in [2, 7]:
+        filename = f"mass_{order}.json"
+        face_generator = dg_generator(order, 2)
+        mass_2 = face_generator.mass_matrix()
+        mass_2_inv = np.linalg.solve(mass_2, np.eye(mass_2.shape[0]))
+        json_io.write_matrix(mass_2, "M2", filename)
+        json_io.write_matrix(mass_2_inv, "M2inv", filename)
+
+        volume_generator = dg_generator(order, 3)
+        mass_3 = volume_generator.mass_matrix()
+        mass_3_inv = np.linalg.solve(mass_3, np.eye(mass_3.shape[0]))
+        json_io.write_matrix(mass_3, "M3", filename)
+        json_io.write_matrix(mass_3_inv, "M3inv", filename)
