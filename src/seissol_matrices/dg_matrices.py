@@ -1,5 +1,4 @@
 import numpy as np
-#import quadpy as qp
 import quad_rules.WitherdenVincentTri
 import quad_rules.WitherdenVincentTet
 import quad_rules.GaussJacobi
@@ -119,9 +118,7 @@ class dg_generator:
                 prod = lambda x: self.face_generator.generator.eval_basis(
                     x, i
                 ) * projected_basis_function(x, j)
-                matrix[i, j] = self.face_generator.scheme.integrate(
-                    prod, self.face_generator.geometry
-                )
+                matrix[i, j] = quad_rules.quadrature.quad(self.face_generator.nodes, self.face_generator.weights, prod)
         return matrix
 
     def fP(self, side):
@@ -167,9 +164,7 @@ class dg_generator:
                 prod = lambda x: self.face_generator.generator.eval_basis(
                     x, i
                 ) * projected_basis_function(x, j)
-                matrix[i, j] = self.face_generator.scheme.integrate(
-                    prod, self.face_generator.geometry
-                )
+                matrix[i, j] = quad_rules.quadrature.quad(self.face_generator.nodes, self.face_generator.weights, prod)
         return matrix
 
     def fMrT(self, side):
