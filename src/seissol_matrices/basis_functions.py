@@ -96,7 +96,7 @@ class BasisFunctionGenerator1D(BasisFunctionGenerator):
         return singularity_free_jacobi_polynomial(i, 0, 0, r_num, r_den)
 
     def eval_diff_basis(self, x, i, k):
-        if n == 0:
+        if i == 0:
             return 0
         else:
             r_num = 2 * x - 1.0

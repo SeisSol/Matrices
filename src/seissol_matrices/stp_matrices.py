@@ -1,5 +1,4 @@
 import numpy as np
-import quadpy as qp
 
 from seissol_matrices import basis_functions
 from seissol_matrices import dg_matrices
@@ -15,8 +14,6 @@ class stp_generator:
         self.order = o
 
         self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
-        self.scheme = qp.c1.gauss_legendre(self.order + 1)
-        self.geometry = [0.0, 1.0]
         self.dg_generator = dg_matrices.dg_generator(self.order, 1)
         self.S = self.dg_generator.mass_matrix()
 
