@@ -27,7 +27,7 @@ class dg_generator:
             )
             self.face_generator = dg_generator(o, 2)
             n, w = quad_rules.WitherdenVincentTet.WitherdenVincentTet().find_best_rule(
-                self.order
+                2 * self.order
             )
         elif self.dim == 2:
             self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
