@@ -35,6 +35,7 @@ class abstract_tester(object):
         timeInt_from_file = json_io.read_matrix(f"timeInt", self.filename)
         self.compare_matrices(timeInt, timeInt_from_file)
 
+
 def setUpClassFromOrder(cls, order):
     number_of_basis_functions = order * (order + 1) * (order + 2) // 6
     cls.filename = f"stp_{order}.json"
@@ -84,4 +85,3 @@ class test_stp_7(abstract_tester, helper.helper):
 
 if __name__ == "__main__":
     unittest.main()
-

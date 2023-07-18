@@ -5,6 +5,7 @@ import quad_rules.GaussJacobi
 import quad_rules.Dunavant
 import quad_rules.WitherdenVincentTri
 
+
 class quadrature(ABC):
     def points(self):
         pass
@@ -54,12 +55,16 @@ class dunavant(quadrature):
 
     def points(self):
         n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
-        n_, w_ = quad_rules.quadrature.transform(n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]))
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
         return n_
 
     def weights(self):
         n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
-        n_, w_ = quad_rules.quadrature.transform(n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]))
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
         return w_
 
 
@@ -70,13 +75,21 @@ class witherden_vincent(quadrature):
         self.name = "witherden_vincent"
 
     def points(self):
-        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(self.n)
-        n_, w_ = quad_rules.quadrature.transform(n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]))
+        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
+            self.n
+        )
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
         return n_
 
     def weights(self):
-        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(self.n)
-        n_, w_ = quad_rules.quadrature.transform(n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]))
+        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
+            self.n
+        )
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
         return w_
 
 

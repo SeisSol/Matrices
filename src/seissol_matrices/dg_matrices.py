@@ -39,8 +39,12 @@ class dg_generator:
         elif self.dim == 1:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
             self.geometry = np.array([[0.0], [1.0]])
-            n, w = quad_rules.GaussJacobi.GaussJacobi(0, 0).find_best_rule(2 * self.order)
-            self.nodes, self.weights = quad_rules.quadrature.transform(n, w, self.geometry)
+            n, w = quad_rules.GaussJacobi.GaussJacobi(0, 0).find_best_rule(
+                2 * self.order
+            )
+            self.nodes, self.weights = quad_rules.quadrature.transform(
+                n, w, self.geometry
+            )
         else:
             raise Execption("Can only generate 1D, 2D or 2D basis functions")
 
