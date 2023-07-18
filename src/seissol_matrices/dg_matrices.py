@@ -1,6 +1,7 @@
 import numpy as np
 import quad_rules.WitherdenVincentTri
 import quad_rules.WitherdenVincentTet
+import quad_rules.JaskowiecSukumar
 import quad_rules.GaussJacobi
 import quad_rules.quadrature
 
@@ -26,7 +27,7 @@ class dg_generator:
                 ]
             )
             self.face_generator = dg_generator(o, 2)
-            n, w = quad_rules.WitherdenVincentTet.WitherdenVincentTet().find_best_rule(
+            n, w = quad_rules.JaskowiecSukumar.JaskowiecSukumar().find_best_rule(
                 2 * self.order
             )
         elif self.dim == 2:
@@ -39,6 +40,7 @@ class dg_generator:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
             self.geometry = np.array([[0.0], [1.0]])
             n, w = quad_rules.GaussJacobi.GaussJacobi().find_best_rule(2 * self.order)
+            self.nodes, self.weights = quad_rules.quadrature.transform(n, w, self.geometry)
         else:
             raise Execption("Can only generate 1D, 2D or 2D basis functions")
 

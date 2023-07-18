@@ -75,14 +75,15 @@ def visualize(nodes, weights, new_corners):
         plt.show()
     elif nodes.shape[1] == 3:
         from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
         fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.scatter(nodes[:, 0], nodes[:, 1],nodes[:, 2],  s=weights * 40)
+        ax = fig.add_subplot(projection="3d")
+        ax.scatter(nodes[:, 0], nodes[:, 1], nodes[:, 2], s=weights * 40)
 
         p = new_corners
         for i in range(4):
-            verts =  [[p[(i) % 4,:], p[(i+1) % 4,:], p[(i+2) % 4,:]]]
-            srf = Poly3DCollection(verts, alpha=.25, facecolor='#800000')
+            verts = [[p[(i) % 4, :], p[(i + 1) % 4, :], p[(i + 2) % 4, :]]]
+            srf = Poly3DCollection(verts, alpha=0.25, facecolor="#800000")
             plt.gca().add_collection3d(srf)
         plt.show()
 
@@ -97,8 +98,8 @@ if __name__ == "__main__":
     # new_corners = np.array([[-2], [4]])
 
     def f(x):
-        #return np.ones(x[0].shape)
-        return x[0] * x[1]**2 * x[2]**3
+        # return np.ones(x[0].shape)
+        return x[0] * x[1] ** 2 * x[2] ** 3
 
     nodes_, weights_ = transform(nodes, weights, new_corners)
     visualize(nodes_, weights_, new_corners)
