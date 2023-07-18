@@ -22,7 +22,7 @@ class stp_generator:
         w = np.zeros((number_of_basis_functions,))
         for i in range(number_of_basis_functions):
             w[i] = self.generator.eval_basis(0, i)
-        return w
+        return np.reshape(np.linalg.solve(self.S, w), (number_of_basis_functions, 1))
 
     def S(self):
         return self.S
@@ -41,8 +41,8 @@ class stp_generator:
 
         for i in range(number_of_basis_functions):
             for j in range(number_of_basis_functions):
-                W[i, j] = self.generator.eval_basis(1, i) * self.generator.eval_basis(
-                    1, j
+                W[i, j] = self.generator.eval_basis(1.0, i) * self.generator.eval_basis(
+                    1.0, j
                 )
 
         return W
@@ -51,18 +51,26 @@ class stp_generator:
         W = self.W()
         K_t = self.dg_generator.stiffness_matrix(0)
 
-        return np.linalg.solve(self.S, W - K_t)
+        # Todo: Why is there the factor 0.5 needed?
+        return np.linalg.solve(self.S, W - 0.5 * K_t)
 
     def time_int(self):
         number_of_basis_functions = self.generator.number_of_basis_functions()
         t = np.zeros((number_of_basis_functions,))
         t[0] = 1
 
-        return t
+        return np.reshape(t, (number_of_basis_functions, 1))
 
 
 if __name__ == "__main__":
-    from seissol_matrices import xml_io
+    from seissol_matrices import json_io
 
-    generator = stp_generator(5)
-    xml_io.write(generator.Z(), "Z", "z.xml")
+    N = 7
+    generator = stp_generator(N)
+    filename = f"stp_{N}.json"
+    Z = generator.Z()
+    print(Z)
+    json_io.write_matrix(Z, "Z", filename)
+
+    json_io.write_matrix(generator.w(), "wHat", filename)
+    json_io.write_matrix(generator.time_int(), "timeInt", filename)

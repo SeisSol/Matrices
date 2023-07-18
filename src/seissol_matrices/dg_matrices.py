@@ -42,9 +42,6 @@ class dg_generator:
             n, w = quad_rules.GaussJacobi.GaussJacobi(0, 0).find_best_rule(
                 2 * self.order
             )
-            self.nodes, self.weights = quad_rules.quadrature.transform(
-                n, w, self.geometry
-            )
         else:
             raise Execption("Can only generate 1D, 2D or 2D basis functions")
 
