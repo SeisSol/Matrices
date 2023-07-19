@@ -8,7 +8,7 @@ import requests
 from seissol_matrices import dr_matrices
 from seissol_matrices import json_io
 from seissol_matrices import quadrature
-from tests import helper
+import helper
 
 
 class abstract_tester(object):

@@ -4,7 +4,7 @@ import unittest
 import requests
 
 from seissol_matrices import nodal_boundary, json_io
-from tests import helper
+import helper
 
 
 class abstract_tester(object):
