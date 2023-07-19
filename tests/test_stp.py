@@ -17,8 +17,9 @@ class abstract_tester(object):
         self.compare_matrices(Z, Z_from_file)
 
     def test_wHat(self):
-        wHat = self.generator.w()
-        wHat = np.reshape(wHat, (wHat.shape[0], 1))
+        w = self.generator.w()
+        S = self.generator.S
+        wHat = np.linalg.solve(S, w)
         wHat_from_file = json_io.read_matrix(f"wHat", self.filename)
         self.compare_matrices(wHat, wHat_from_file)
 
