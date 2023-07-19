@@ -101,10 +101,8 @@ class BasisFunctionGenerator1D(BasisFunctionGenerator):
         else:
             r_num = 2 * x - 1.0
             r_den = 1.0
-            return (
-                2
-                * (i + 1)
-                * singularity_free_jacobi_polynomial(i - 1, 1, 1, r_num, r_den)
+            return (i + 1) * singularity_free_jacobi_polynomial(
+                i - 1, 1, 1, r_num, r_den
             )
 
     def number_of_basis_functions(self):

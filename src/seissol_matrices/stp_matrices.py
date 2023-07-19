@@ -22,7 +22,7 @@ class stp_generator:
         w = np.zeros((number_of_basis_functions,))
         for i in range(number_of_basis_functions):
             w[i] = self.generator.eval_basis(0, i)
-        return np.reshape(np.linalg.solve(self.S, w), (number_of_basis_functions, 1))
+        return np.reshape(w, (number_of_basis_functions, 1))
 
     def S(self):
         return self.S
@@ -51,8 +51,7 @@ class stp_generator:
         W = self.W()
         K_t = self.dg_generator.stiffness_matrix(0)
 
-        # Todo: Why is there the factor 0.5 needed?
-        return np.linalg.solve(self.S, W - 0.5 * K_t)
+        return np.linalg.solve(self.S, W - K_t)
 
     def time_int(self):
         number_of_basis_functions = self.generator.number_of_basis_functions()
@@ -65,12 +64,14 @@ class stp_generator:
 if __name__ == "__main__":
     from seissol_matrices import json_io
 
-    N = 7
+    N = 3
     generator = stp_generator(N)
     filename = f"stp_{N}.json"
     Z = generator.Z()
     print(Z)
     json_io.write_matrix(Z, "Z", filename)
 
-    json_io.write_matrix(generator.w(), "wHat", filename)
+    w = generator.w()
+    print(w)
+    json_io.write_matrix(np.linalg.solve(generator.S, w), "wHat", filename)
     json_io.write_matrix(generator.time_int(), "timeInt", filename)
