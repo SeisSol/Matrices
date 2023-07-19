@@ -1,5 +1,4 @@
 #!/bin/env python3
-import quadpy as qp
 import numpy as np
 from seissol_matrices import basis_functions, quadrature, xml_io
 
