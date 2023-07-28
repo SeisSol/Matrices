@@ -1706,6 +1706,7 @@ class WitherdenVincentTetRaw(RawDataHandler):
             ],
         }
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     quadrule = WitherdenVincentTetRaw()
     quadrule.save("WitherdenVincentTetRaw.pkl")

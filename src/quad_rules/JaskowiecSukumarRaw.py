@@ -38195,6 +38195,7 @@ class JaskowiecSukumarRaw(RawDataHandler):
             ],
         }
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     quadrule = JaskowiecSukumarRaw()
     quadrule.save("JaskowiecSukumar.pkl")

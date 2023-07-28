@@ -8,7 +8,6 @@ from quad_rules.QuadRule import QuadRule
 class WitherdenVincentTet(QuadRule):
     def __init__(self):
         directory = os.path.dirname(os.path.abspath(__file__))
-        fn = 'WitherdenVincentTet.pkl'
-        with open(os.path.join(directory, fn), 'rb') as f:
+        fn = "WitherdenVincentTet.pkl"
+        with open(os.path.join(directory, fn), "rb") as f:
             self.data = pickle.load(f)
-

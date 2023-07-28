@@ -8,6 +8,6 @@ from quad_rules.QuadRule import QuadRule
 class Dunavant(QuadRule):
     def __init__(self):
         directory = os.path.dirname(os.path.abspath(__file__))
-        fn = 'Dunavant.pkl'
-        with open(os.path.join(directory, fn), 'rb') as f:
+        fn = "Dunavant.pkl"
+        with open(os.path.join(directory, fn), "rb") as f:
             self.data = pickle.load(f)

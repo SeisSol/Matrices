@@ -2943,7 +2943,7 @@ class DunavantRaw(RawDataHandler):
             ],
         }
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     quadrule = DunavantRaw()
     quadrule.save("Dunavant.pkl")
-
