@@ -1,6 +1,6 @@
 #!/bin/env python3
 import numpy as np
-from seissol_matrices import basis_functions, quadrature, xml_io
+from seissol_matrices import basis_functions, quad_points, xml_io
 
 import json
 import sys
@@ -25,7 +25,7 @@ def main():
     for order in range(2, 8):
         output_file = f"output/gravitational_energy_matrices_{order}.xml"
 
-        quadrule = quadrature.gauss_jacobi(order + 1)
+        quadrule = quad_points.gauss_jacobi(order + 1)
         V2mTo2n = generate_V2mTo2n(order=order, quadrule=quadrule)
         xml_io.write_matrix(V2mTo2n, "V2mTo2JacobiQuad", output_file)
 
