@@ -3,7 +3,7 @@
 import numpy as np
 from seissol_matrices import basis_functions
 from seissol_matrices import dg_matrices
-from seissol_matrices import quadrature
+from seissol_matrices import quad_points
 
 
 class dr_generator:
@@ -120,9 +120,9 @@ if __name__ == "__main__":
 
     for order in range(2, 8):
         for quadrule in [
-            quadrature.gauss_jacobi(order + 1),
-            quadrature.dunavant(order + 1),
-            quadrature.witherden_vincent(order + 1),
+            quad_points.gauss_jacobi(order + 1),
+            quad_points.dunavant(order + 1),
+            quad_points.witherden_vincent(order + 1),
         ]:
             generator = dr_generator(order, quadrule)
 

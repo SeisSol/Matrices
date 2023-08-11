@@ -1,5 +1,4 @@
 import numpy as np
-import quadpy as qp
 
 from seissol_matrices import basis_functions
 from seissol_matrices import dg_matrices
@@ -15,8 +14,6 @@ class stp_generator:
         self.order = o
 
         self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
-        self.scheme = qp.c1.gauss_legendre(self.order + 1)
-        self.geometry = [0.0, 1.0]
         self.dg_generator = dg_matrices.dg_generator(self.order, 1)
         self.S = self.dg_generator.mass_matrix()
 
@@ -25,7 +22,7 @@ class stp_generator:
         w = np.zeros((number_of_basis_functions,))
         for i in range(number_of_basis_functions):
             w[i] = self.generator.eval_basis(0, i)
-        return w
+        return np.reshape(w, (number_of_basis_functions, 1))
 
     def S(self):
         return self.S
@@ -44,8 +41,8 @@ class stp_generator:
 
         for i in range(number_of_basis_functions):
             for j in range(number_of_basis_functions):
-                W[i, j] = self.generator.eval_basis(1, i) * self.generator.eval_basis(
-                    1, j
+                W[i, j] = self.generator.eval_basis(1.0, i) * self.generator.eval_basis(
+                    1.0, j
                 )
 
         return W
@@ -61,11 +58,20 @@ class stp_generator:
         t = np.zeros((number_of_basis_functions,))
         t[0] = 1
 
-        return t
+        return np.reshape(t, (number_of_basis_functions, 1))
 
 
 if __name__ == "__main__":
-    from seissol_matrices import xml_io
+    from seissol_matrices import json_io
 
-    generator = stp_generator(5)
-    xml_io.write(generator.Z(), "Z", "z.xml")
+    N = 3
+    generator = stp_generator(N)
+    filename = f"stp_{N}.json"
+    Z = generator.Z()
+    print(Z)
+    json_io.write_matrix(Z, "Z", filename)
+
+    w = generator.w()
+    print(w)
+    json_io.write_matrix(np.linalg.solve(generator.S, w), "wHat", filename)
+    json_io.write_matrix(generator.time_int(), "timeInt", filename)

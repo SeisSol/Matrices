@@ -57,5 +57,5 @@ jobs:
 
       - name: Coding style
         run: |
-          black --check seissol_matrices
+          black --check src
           black --check tests

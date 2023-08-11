@@ -96,15 +96,13 @@ class BasisFunctionGenerator1D(BasisFunctionGenerator):
         return singularity_free_jacobi_polynomial(i, 0, 0, r_num, r_den)
 
     def eval_diff_basis(self, x, i, k):
-        if n == 0:
+        if i == 0:
             return 0
         else:
             r_num = 2 * x - 1.0
             r_den = 1.0
-            return (
-                2
-                * (i + 1)
-                * singularity_free_jacobi_polynomial(i - 1, 1, 1, r_num, r_den)
+            return (i + 1) * singularity_free_jacobi_polynomial(
+                i - 1, 1, 1, r_num, r_den
             )
 
     def number_of_basis_functions(self):

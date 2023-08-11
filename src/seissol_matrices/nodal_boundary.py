@@ -2,7 +2,7 @@
 
 import numpy as np
 import os
-from seissol_matrices import basis_functions, dg_matrices, quadrature, json_io
+from seissol_matrices import basis_functions, dg_matrices, json_io
 
 
 def parse_nodes(filename):

@@ -7,7 +7,7 @@ import requests
 
 from seissol_matrices import dg_matrices
 from seissol_matrices import xml_io
-from tests import helper
+import helper
 
 
 class abstract_tester(object):

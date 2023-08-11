@@ -1,6 +1,9 @@
 from abc import ABC
-import quadpy as qp
 import numpy as np
+import quad_rules.quadrature
+import quad_rules.GaussJacobi
+import quad_rules.Dunavant
+import quad_rules.WitherdenVincentTri
 
 
 class quadrature(ABC):
@@ -20,8 +23,8 @@ class gauss_jacobi(quadrature):
         self.name = "jacobi"
 
     def gauss_jacobi_quadrature_1d(self, a, b):
-        gauss_jacobi_rule = qp.c1.gauss_jacobi(self.n, a, b)
-        return gauss_jacobi_rule.points[::-1], gauss_jacobi_rule.weights[::-1]
+        nodes, weights = quad_rules.GaussJacobi.GaussJacobi(a, b).find_best_rule(self.n)
+        return nodes, weights
 
     def points(self):
         points0, weights0 = self.gauss_jacobi_quadrature_1d(0, 0)
@@ -51,12 +54,18 @@ class dunavant(quadrature):
         self.name = "dunavant"
 
     def points(self):
-        dunavant = qp.t2.schemes[f"dunavant_{self.n:02d}"]()
-        return dunavant.points[:2, :].T
+        n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
+        return n_
 
     def weights(self):
-        dunavant = qp.t2.schemes[f"dunavant_{self.n:02d}"]()
-        return 0.5 * np.reshape(dunavant.weights, (dunavant.weights.shape[0], 1))
+        n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
+        return w_
 
 
 class witherden_vincent(quadrature):
@@ -66,12 +75,22 @@ class witherden_vincent(quadrature):
         self.name = "witherden_vincent"
 
     def points(self):
-        wv = qp.t2.schemes[f"witherden_vincent_{self.n:02d}"]()
-        return wv.points[:2, :].T
+        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
+            self.n
+        )
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
+        return n_
 
     def weights(self):
-        wv = qp.t2.schemes[f"witherden_vincent_{self.n:02d}"]()
-        return 0.5 * np.reshape(wv.weights, (wv.weights.shape[0], 1))
+        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
+            self.n
+        )
+        n_, w_ = quad_rules.quadrature.transform(
+            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
+        return w_
 
 
 if __name__ == "__main__":
