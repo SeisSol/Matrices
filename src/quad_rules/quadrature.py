@@ -5,11 +5,40 @@ from . import GaussJacobi
 
 
 def quad(nodes, weights, f):
+    """
+    Compute the integral with a given quadrature rule
+
+    Parameters
+    ----------
+    nodes : np.array of shape (n, d)
+        The nodes of the quadrature rule
+    weights : np.array of shape (n,)
+        The weights of the quadrature rule
+    f : function
+        The function, of which the integral shall be computed
+    """
     f_eval = f(nodes.T)
     return np.dot(f_eval, weights)
 
 
 def transform(nodes, weights, new_corners):
+    """
+    Transforms a quadrature rule from the reference element to another element.
+
+    By convention, the reference elements are:
+    1D: -1, 1
+    2D: (-1, -1), (1, 0), (0, 1)
+    3D: (-1, -1, -1), (1, 0, 0), (0, 1, 0), (0, 0, 1)
+
+    Parameters
+    ----------
+    nodes : np.array of shape (n, d)
+        The nodes of the quadrature rule
+    weights : np.array of shape (n,)
+        The weights of the quadrature rule
+    new_corners : np.array of shape (d, d)
+        The nodes of the new element
+    """
     if nodes.shape[1] == 1:
         x_0 = new_corners[0, :]
         x_1 = new_corners[1, :]
@@ -41,6 +70,18 @@ def transform(nodes, weights, new_corners):
 
 
 def visualize(nodes, weights, new_corners):
+    """
+    Visualize a quadratur rule on a given element.
+
+    Parameters
+    ----------
+    nodes : np.array of shape (n, d)
+        The nodes of the quadrature rule
+    weights : np.array of shape (n,)
+        The weights of the quadrature rule
+    new_corners : np.array of shape (d, d)
+        The nodes of the element
+    """
     import matplotlib.pyplot as plt
 
     if nodes.shape[1] == 1:
@@ -89,18 +130,14 @@ def visualize(nodes, weights, new_corners):
 
 
 if __name__ == "__main__":
-    # nodes, weights = WitherdenVincentTri.WitherdenVincentTri().find_best_rule(3)
-    # new_corners = np.array([[-2, -1], [4, -3], [-1, 7]])
-    nodes, weights = WitherdenVincentTet.WitherdenVincentTet().find_best_rule(7)
-    new_corners = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    # nodes, weights = WitherdenVincentTet.WitherdenVincentTet().find_best_rule(3)
-    # nodes, weights = GaussJacobi.GaussJacobi(0, 0).find_best_rule(6)
-    # new_corners = np.array([[-2], [4]])
+    nodes, weights = WitherdenVincentTri.WitherdenVincentTri().find_best_rule(5)
+    new_corners = np.array([[0, 0], [1, 0], [0, 1]])
 
     def f(x):
-        # return np.ones(x[0].shape)
-        return x[0] * x[1] ** 2 * x[2] ** 3
+        return x[0] * x[1] ** 2
 
     nodes_, weights_ = transform(nodes, weights, new_corners)
+    print(nodes_.shape)
+    print(weights_.shape)
     visualize(nodes_, weights_, new_corners)
     print(quad(nodes_, weights_, f))
