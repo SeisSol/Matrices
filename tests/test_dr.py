@@ -37,7 +37,8 @@ def setUpClassFromOrder(cls, order):
     # point to some old commit
     url = f"https://raw.githubusercontent.com/SeisSol/SeisSol/c99ca8f814b7184eb435272f9d4f63b03b8b6cf4/generated_code/matrices/dr_quadrature_matrices_{order}.json"
     r = requests.get(url, allow_redirects=True)
-    open(cls.filename, "wb").write(r.content)
+    with open(cls.filename, "wb") as f:
+        f.write(r.content)
     cls.order = order
     quadrule = quad_points.gauss_jacobi(order + 1)
     cls.generator = dr_matrices.dr_generator(cls.order, quadrule)
