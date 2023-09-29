@@ -62,7 +62,7 @@ class dg_generator:
                 ) * self.generator.eval_basis(x, j)
                 self.M[i, j] = quad_rules.quadrature.quad(
                     self.nodes, self.weights, prod
-                )[0]
+                )
         return self.M
 
     def stiffness_matrix(self, dim):
@@ -78,7 +78,7 @@ class dg_generator:
                 ) * self.generator.eval_basis(x, j)
                 self.K[dim][i, j] = quad_rules.quadrature.quad(
                     self.nodes, self.weights, prod
-                )[0]
+                )
         return self.K[dim]
 
     def kDivM(self, dim):
