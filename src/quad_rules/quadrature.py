@@ -39,6 +39,8 @@ def transform(nodes, weights, new_corners):
     new_corners : np.array of shape (d, d)
         The nodes of the new element
     """
+    # 1D nodes are 1-dimensional array
+    nodes = nodes.reshape(nodes.shape[0], -1)
     if nodes.shape[1] == 1:
         x_0 = new_corners[0, :]
         x_1 = new_corners[1, :]
@@ -66,7 +68,10 @@ def transform(nodes, weights, new_corners):
 
     offset = -M @ origin + x_0
     volume_fraction = np.abs(np.linalg.det(M))
-    return np.add(nodes @ M.T, offset), volume_fraction * weights
+
+    transformed_nodes = np.add(nodes @ M.T, offset)
+    transformed_weights = volume_fraction * weights
+    return transformed_nodes.reshape(nodes.shape), transformed_weights
 
 
 def visualize(nodes, weights, new_corners):
