@@ -118,6 +118,7 @@ class dr_generator:
 if __name__ == "__main__":
     from seissol_matrices import json_io
 
+    #for order in range(2, 8):
     for order in range(2, 8):
         for quadrule in [
             quad_points.gauss_jacobi(order + 1),
@@ -131,7 +132,7 @@ if __name__ == "__main__":
             quadweights = generator.quadweights()
             resample = generator.resample()
             json_io.write_matrix(quadpoints, "quadpoints", filename)
-            json_io.write_matrix(quadweights, "quadweights", filename)
+            json_io.write_matrix(quadweights.reshape(-1,1), "quadweights", filename)
             json_io.write_matrix(resample, "resample", filename)
             for a in range(0, 4):
                 for b in range(0, 4):

@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 from quad_rules.QuadRule import QuadRule
@@ -12,16 +13,16 @@ class GaussJacobi(QuadRule):
     def compute_nodes_and_weights(self, n):
         weightFactor = (
             -(2.0 * n + self.a + self.b + 2)
-            * np.math.factorial(n + self.a)
-            * np.math.factorial(n + self.b)
+            * math.factorial(n + self.a)
+            * math.factorial(n + self.b)
             * 2 ** (self.a + self.b)
             / (
                 (n + self.a + self.b + 1.0)
-                * np.math.factorial(n + self.a + self.b)
-                * np.math.factorial(n + 1)
+                * math.factorial(n + self.a + self.b)
+                * math.factorial(n + 1)
             )
         )
-        nodes = np.zeros((n, 1))
+        nodes = np.zeros(n)
         weights = np.zeros(n)
         for i in range(1, n + 1):
             x = np.cos(
@@ -33,10 +34,11 @@ class GaussJacobi(QuadRule):
                 x -= p / d_p
                 p = jacobi_polynomial(n, self.a, self.b, x)
                 d_p = jacobi_derivative(n, self.a, self.b, x)
-            nodes[i - 1, 0] = x
+            nodes[i - 1] = x
             weights[i - 1] = weightFactor / (
                 jacobi_polynomial(n + 1, self.a, self.b, x) * d_p
             )
+
         return nodes, weights
 
 
