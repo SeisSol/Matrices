@@ -15,20 +15,23 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-
-      - name: Prepare environment
-        run: pip install nose2 coverage numpy scipy quadpy orthopy ndim
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'poetry'
+      - run: poetry install --with dev,ci
 
       - name: Unit tests and coverage
         run: | 
-          coverage run -m nose2
-          coverage xml
+          poetry run coverage run -m nose2
+          poetry run coverage xml
 
       - name: Code Coverage Report
         run: | 
-          pip install coverage-badge
-          coverage report --omit "/usr/*"
-          cov=$(coverage report --omit "/usr/*" | grep TOTAL | awk '{print $4}')
+          poetry run coverage report --omit "/usr/*"
+          cov=$(poetry run coverage report --omit "/usr/*" | grep TOTAL | awk '{print $4}')
           echo $cov
           echo "COVERAGE=${cov:0:-1}" >> $GITHUB_ENV
 
