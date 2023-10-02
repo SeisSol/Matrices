@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "seissol-matrices"
+name = "seissol_matrices"
 version = "0.1.0"
 description = ""
 authors = [
@@ -7,15 +7,11 @@ authors = [
     "Lukas Krenz <lukas.krenz@in.tum.de>",
 ]
 readme = "README.md"
-packages = [{include = "seissol_matrices"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 numpy = "^1.24.2"
 scipy = "^1.10.0"
-quadpy = "^0.16.22"
-orthopy = "^0.8.97"
-ndim = "^0.1.18"
 
 [tool.poetry.group.dev.dependencies]
 nose2 = "^0.12.0"

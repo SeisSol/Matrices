@@ -44,7 +44,7 @@ class gauss_jacobi(quadrature):
         for i in range(self.n):
             for j in range(self.n):
                 weights[i, j] = weights1[i] * weights0[j] * 0.125
-        weights = weights.reshape(((self.n) ** 2, 1))
+        weights = weights.reshape(((self.n) ** 2))
         return weights
 
 
