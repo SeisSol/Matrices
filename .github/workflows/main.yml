@@ -48,17 +48,7 @@ jobs:
           minColorRange: 0k
           forceUpdate: true
 
-  coding-style:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-
-      - name: Prepare environment
-        run: pip install black
-
       - name: Coding style
         run: |
-          black --check src
-          black --check tests
+          poetry run black --check src
+          poetry run black --check tests
