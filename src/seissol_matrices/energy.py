@@ -25,7 +25,7 @@ def main():
     for order in range(2, 8):
         output_file = f"output/gravitational_energy_matrices_{order}.xml"
 
-        quadrule = quad_points.gauss_jacobi(order + 1)
+        quadrule = quad_points.stroud(order + 1)
         V2mTo2n = generate_V2mTo2n(order=order, quadrule=quadrule)
         xml_io.write_matrix(V2mTo2n, "V2mTo2JacobiQuad", output_file)
 

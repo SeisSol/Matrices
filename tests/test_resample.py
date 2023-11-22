@@ -8,7 +8,7 @@ import requests
 from seissol_matrices import dr_matrices
 from seissol_matrices import json_io
 from seissol_matrices import quad_points
-import helper
+from tests import helper
 
 
 class abstract_tester(object):
@@ -25,7 +25,7 @@ def setUpClassFromOrder(cls, order):
     r = requests.get(url, allow_redirects=True)
     open(cls.filename, "wb").write(r.content)
     cls.order = order
-    quadrule = quad_points.gauss_jacobi(order + 1)
+    quadrule = quad_points.stroud(order + 1)
     cls.generator = dr_matrices.dr_generator(cls.order, quadrule)
 
 
