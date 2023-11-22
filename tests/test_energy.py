@@ -7,12 +7,12 @@ import requests
 
 from seissol_matrices import energy, quad_points
 from seissol_matrices import xml_io
-import helper
+from tests import helper
 
 
 class abstract_tester(object):
     def test_V2mTo2JacobiQuad(self):
-        quadrule = quad_points.gauss_jacobi(self.order + 1)
+        quadrule = quad_points.stroud(self.order + 1)
         V2mTo2 = self.generator.generate_V2mTo2n(order=self.order, quadrule=quadrule)
         V2mTo2_from_file = xml_io.read_matrix(f"V2mTo2JacobiQuad", self.filename)
         self.compare_matrices(V2mTo2, V2mTo2_from_file)

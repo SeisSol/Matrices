@@ -1,7 +1,8 @@
 import numpy as np
 from . import WitherdenVincentTet
 from . import WitherdenVincentTri
-from . import GaussJacobi
+from . import Dunavant
+from . import JaskowiecSukumar
 
 
 def quad(nodes, weights, f):
@@ -135,14 +136,21 @@ def visualize(nodes, weights, new_corners):
 
 
 if __name__ == "__main__":
-    nodes, weights = WitherdenVincentTri.WitherdenVincentTri().find_best_rule(5)
-    new_corners = np.array([[0, 0], [1, 0], [0, 1]])
+    from scipy.special import comb as choose
+
+    n = 1
+    k = 3
 
     def f(x):
-        return x[0] * x[1] ** 2
+        return x[0] ** n * x[1] ** k
 
-    nodes_, weights_ = transform(nodes, weights, new_corners)
-    print(nodes_.shape)
-    print(weights_.shape)
-    visualize(nodes_, weights_, new_corners)
-    print(quad(nodes_, weights_, f))
+    C = choose(n + k + 1, n)
+    print(f"analytic integral = {1 / (k+1) / (n + k + 2) / C}")
+
+    for rule in [WitherdenVincentTri.WitherdenVincentTri(), Dunavant.Dunavant()]:
+        nodes, weights = rule.find_best_rule(19)
+        new_corners = np.array([[0, 0], [1, 0], [0, 1]])
+
+        nodes_, weights_ = transform(nodes, weights, new_corners)
+        visualize(nodes_, weights_, new_corners)
+        print(quad(nodes_, weights_, f))

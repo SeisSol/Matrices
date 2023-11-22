@@ -7,7 +7,7 @@ import requests
 
 from seissol_matrices import stp_matrices
 from seissol_matrices import json_io
-import helper
+from tests import helper
 
 
 class abstract_tester(object):
