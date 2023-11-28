@@ -132,7 +132,7 @@ class dr_generator:
 if __name__ == "__main__":
     from seissol_matrices import json_io
 
-    for order in range(2, 8):
+    for order in range(1, 8):
         for quadrule in [
             quad_points.stroud(order + 1),
             quad_points.dunavant(order + 1),
