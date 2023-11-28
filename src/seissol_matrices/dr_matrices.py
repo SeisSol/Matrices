@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
     for order in range(2, 8):
         for quadrule in [
-            quad_points.gauss_jacobi(order + 1),
+            quad_points.stroud(order + 1),
             quad_points.dunavant(order + 1),
             quad_points.witherden_vincent(order + 1),
         ]:

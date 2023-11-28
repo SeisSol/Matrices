@@ -3,7 +3,7 @@ import quad_rules.WitherdenVincentTri
 import quad_rules.WitherdenVincentTet
 import quad_rules.JaskowiecSukumar
 import quad_rules.GaussJacobi
-import quad_rules.quadrature
+import quad_rules.Quadrature
 
 from seissol_matrices import basis_functions
 
@@ -45,7 +45,7 @@ class dg_generator:
         else:
             raise Execption("Can only generate 1D, 2D or 2D basis functions")
 
-        self.nodes, self.weights = quad_rules.quadrature.transform(n, w, self.geometry)
+        self.nodes, self.weights = quad_rules.Quadrature.transform(n, w, self.geometry)
         self.M = None
         self.K = self.dim * [None]
 
@@ -60,7 +60,7 @@ class dg_generator:
                 prod = lambda x: self.generator.eval_basis(
                     x, i
                 ) * self.generator.eval_basis(x, j)
-                self.M[i, j] = quad_rules.quadrature.quad(
+                self.M[i, j] = quad_rules.Quadrature.quad(
                     self.nodes, self.weights, prod
                 )
         return self.M
@@ -76,7 +76,7 @@ class dg_generator:
                 prod = lambda x: self.generator.eval_diff_basis(
                     x, i, dim
                 ) * self.generator.eval_basis(x, j)
-                self.K[dim][i, j] = quad_rules.quadrature.quad(
+                self.K[dim][i, j] = quad_rules.Quadrature.quad(
                     self.nodes, self.weights, prod
                 )
         return self.K[dim]
@@ -131,7 +131,7 @@ class dg_generator:
                 prod = lambda x: self.face_generator.generator.eval_basis(
                     x, i
                 ) * projected_basis_function(x, j)
-                matrix[i, j] = quad_rules.quadrature.quad(
+                matrix[i, j] = quad_rules.Quadrature.quad(
                     self.face_generator.nodes, self.face_generator.weights, prod
                 )
         return matrix
@@ -179,7 +179,7 @@ class dg_generator:
                 prod = lambda x: self.face_generator.generator.eval_basis(
                     x, i
                 ) * projected_basis_function(x, j)
-                matrix[i, j] = quad_rules.quadrature.quad(
+                matrix[i, j] = quad_rules.Quadrature.quad(
                     self.face_generator.nodes, self.face_generator.weights, prod
                 )
         return matrix
