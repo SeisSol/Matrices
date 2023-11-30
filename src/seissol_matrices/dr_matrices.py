@@ -109,7 +109,7 @@ class dr_generator:
 
         mass = self.dg2_generator.mass_matrix()
 
-        V = np.linalg.inv(mass) @ E
+        V = np.linalg.solve(mass, E)
 
         return V
 
