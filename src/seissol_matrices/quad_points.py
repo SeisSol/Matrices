@@ -20,7 +20,7 @@ class quadrature(ABC):
 class stroud(quadrature):
     def __init__(self, n):
         self.n = n
-        self.name = "Stroud"
+        self.name = "stroud"
 
     def gauss_jacobi_quadrature_1d(self, a, b):
         nodes, weights = quad_rules.GaussJacobi.GaussJacobi(a, b).find_best_rule(self.n)
@@ -51,7 +51,7 @@ class stroud(quadrature):
 class dunavant(quadrature):
     def __init__(self, n):
         self.n = n
-        self.name = "Dunavant"
+        self.name = "dunavant"
 
     def points(self):
         n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
@@ -72,7 +72,7 @@ class witherden_vincent(quadrature):
     def __init__(self, n):
         # Witherden Vincent Quadratur rule of order 4 does not exist
         self.n = n if n != 3 else 4
-        self.name = "Witherden Vincent"
+        self.name = "witherden_vincent"
 
     def points(self):
         n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(

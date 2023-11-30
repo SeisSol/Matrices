@@ -96,7 +96,7 @@ class dr_generator:
         weights = self.quadrule.weights()
         return weights
 
-    def resample(self):
+    def V2QuadTo2m(self):
         n = self.bf2_generator.number_of_basis_functions()
         points = self.quadrule.points()
         weights = self.quadrule.weights()
@@ -105,20 +105,34 @@ class dr_generator:
         E = np.zeros((n, m))
         for i in range(n):
             for j, p in enumerate(points):
-                E[i, j] = self.bf2_generator.eval_basis(p, i)
-        W = np.eye(m)
-        for i in range(m):
-            W[i, i] = weights[i]
+                E[i, j] = self.bf2_generator.eval_basis(p, i) * weights[j]
 
         mass = self.dg2_generator.mass_matrix()
 
-        return np.dot(E.T, np.linalg.solve(mass, np.dot(E, W)))
+        V = np.linalg.solve(mass, E)
+
+        return V
+
+    def V2mTo2Quad(self):
+        n = self.bf2_generator.number_of_basis_functions()
+        points = self.quadrule.points()
+        m = points.shape[0]
+
+        E = np.zeros((m, n))
+        for i in range(n):
+            for j, p in enumerate(points):
+                E[j, i] = self.bf2_generator.eval_basis(p, i)
+
+        return E
+
+    def resample(self):
+        return self.V2mTo2Quad() @ self.V2QuadTo2m()
 
 
 if __name__ == "__main__":
     from seissol_matrices import json_io
 
-    for order in range(2, 8):
+    for order in range(1, 8):
         for quadrule in [
             quad_points.stroud(order + 1),
             quad_points.dunavant(order + 1),
@@ -130,9 +144,14 @@ if __name__ == "__main__":
             quadpoints = generator.quadpoints()
             quadweights = generator.quadweights()
             resample = generator.resample()
+            V2QuadTo2m = generator.V2QuadTo2m()
+            V2mTo2Quad = generator.V2mTo2Quad()
+
             json_io.write_matrix(quadpoints, "quadpoints", filename)
             json_io.write_matrix(quadweights.reshape(-1, 1), "quadweights", filename)
             json_io.write_matrix(resample, "resample", filename)
+            json_io.write_matrix(V2QuadTo2m, "V2QuadTo2m", filename)
+            json_io.write_matrix(V2mTo2Quad, "V2mTo2Quad", filename)
             for a in range(0, 4):
                 for b in range(0, 4):
                     V3mTo2n = generator.V3mTo2n(a, b)
