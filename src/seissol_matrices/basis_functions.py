@@ -85,11 +85,17 @@ class BasisFunctionGenerator(ABC):
     def number_of_basis_functions(self, o):
         pass
 
+    def dim(self):
+        pass
+
 
 ################################################################################
 
 
 class BasisFunctionGenerator1D(BasisFunctionGenerator):
+    def dim(self):
+        return 1
+
     def eval_basis(self, x, i):
         r_num = 2 * x - 1.0
         r_den = 1.0
@@ -113,6 +119,9 @@ class BasisFunctionGenerator1D(BasisFunctionGenerator):
 
 
 class BasisFunctionGenerator2D(BasisFunctionGenerator):
+    def dim(self):
+        return 2
+
     def unroll_index(self, i):
         n = i[0] + i[1]
         tri = 0.5 * n * (n + 1)
@@ -171,6 +180,9 @@ class BasisFunctionGenerator2D(BasisFunctionGenerator):
 
 
 class BasisFunctionGenerator3D(BasisFunctionGenerator):
+    def dim(self):
+        return 3
+
     def unroll_index(self, i):
         n = i[0] + i[1] + i[2]
         tet = (n * (n + 1) * (n + 2)) / 6.0
