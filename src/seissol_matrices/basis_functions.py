@@ -40,7 +40,7 @@ def singularity_free_jacobi_polynomial(n, a, b, x, y):
 
 def singularity_free_jacobi_polynomial_and_derivatives(n, a, b, x, y):
     if n == 0:
-        return 1.0, 0.0, 0.0
+        return np.ones(np.shape(x)), np.zeros(np.shape(x)), np.zeros(np.shape(x))
     pm_1 = 1.0
     ddx_pm_1 = 0.0
     ddy_pm_1 = 0.0
@@ -103,7 +103,7 @@ class BasisFunctionGenerator1D(BasisFunctionGenerator):
 
     def eval_diff_basis(self, x, i, k):
         if i == 0:
-            return 0
+            return np.zeros(x.shape)
         else:
             r_num = 2 * x - 1.0
             r_den = 1.0

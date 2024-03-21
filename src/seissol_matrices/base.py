@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def collocate(basis, points):
     # takes a basis object, and a points array
     # of the form: npoints × dim
@@ -13,9 +14,9 @@ def collocate(basis, points):
     assert basis.dim() == points.shape[1]
 
     nbasis = basis.number_of_basis_functions()
-    
+
     coll = np.empty((nbasis, points.shape[0]))
     for i in range(nbasis):
         for j in range(points.shape[0]):
-            coll[i,j] = basis.eval_basis(points[j,:], i)
+            coll[i, j] = basis.eval_basis(points[j, :], i)
     return coll

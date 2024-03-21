@@ -5,7 +5,9 @@ import quad_rules.JaskowiecSukumar
 import quad_rules.GaussJacobi
 import quad_rules.Quadrature
 
-import base
+import itertools
+
+from seissol_matrices import base
 
 from seissol_matrices import basis_functions
 
@@ -32,17 +34,23 @@ class dg_generator:
                 ]
             )
             self.face_generator = dg_generator(o, 2)
-            self.quadrule_finder = quad_rules.JaskowiecSukumar.JaskowiecSukumar().find_best_rule
+            self.quadrule_finder = (
+                quad_rules.JaskowiecSukumar.JaskowiecSukumar().find_best_rule
+            )
             self.generator_finder = basis_functions.BasisFunctionGenerator3D
         elif self.dim == 2:
             self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
             self.geometry = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-            self.quadrule_finder = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule
+            self.quadrule_finder = (
+                quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule
+            )
             self.generator_finder = basis_functions.BasisFunctionGenerator2D
         elif self.dim == 1:
             self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
             self.geometry = np.array([[0.0], [1.0]])
-            self.quadrule_finder = quad_rules.GaussJacobi.GaussJacobi(0, 0).find_best_rule
+            self.quadrule_finder = quad_rules.GaussJacobi.GaussJacobi(
+                0, 0
+            ).find_best_rule
             self.generator_finder = basis_functions.BasisFunctionGenerator1D
         else:
             raise Execption("Can only generate 1D, 2D or 2D basis functions")
@@ -50,11 +58,11 @@ class dg_generator:
         self.nodes, self.weights = self.get_quadrature_rule(2 * self.order)
 
     def get_quadrature_rule(self, order):
-        n, w = self.quadrule_finder(order)        
+        n, w = self.quadrule_finder(order)
 
         return quad_rules.Quadrature.transform(n, w, self.geometry)
 
-    def multilinear_form(self, face, der, order = None, side = None):
+    def multilinear_form(self, face, der, order=None, side=None):
         """
         Given an array der, we compute a tensor V[i...] of dimension
         len(der) defined by (given in C++ parameter pack notation)
@@ -78,14 +86,14 @@ class dg_generator:
         # instead of the two current ones.
 
         # we only support a first derivative at the moment
-        assert np.all([d in (None,*(i for i in range(self.dim))) for d in der])
+        assert np.all([d in (None, *(i for i in range(self.dim))) for d in der])
 
         if order is None:
             order = [self.order] * len(der)
-        
+
         if side is None:
-            side = [-1] * len(der)
-        
+            side = [None] * len(der)
+
         assert len(order) == len(der)
         assert len(side) == len(der)
 
@@ -94,47 +102,58 @@ class dg_generator:
                 basis = self.generator_finder(o)
             else:
                 basis = self.face_generator.generator_finder(o)
-            basiseval_pre = basis.eval_basis if d is None else lambda x,i: basis.eval_diff_basis(x,i,d)
+            basiseval_pre = (
+                basis.eval_basis
+                if d is None
+                else lambda x, i: basis.eval_diff_basis(x, i, d)
+            )
             if face:
                 if s is None:
-                    basiseval = lambda x, i: basiseval_pre(self.volume_to_face_parametrisation(x, face), i)
+                    basiseval = lambda x, i: basiseval_pre(
+                        self.volume_to_face_parametrisation(x, face), i
+                    )
                 elif s < 0:
                     basiseval = basiseval_pre
                 else:
-                    basiseval = lambda x, i: basiseval_pre(self.face_to_face_parametrisation(x, face), i)
+                    basiseval = lambda x, i: basiseval_pre(
+                        self.face_to_face_parametrisation(x, face), i
+                    )
             else:
                 # volume * face does not make sense when evaluating on the whole volume
                 assert s is None
                 basiseval = basiseval_pre
             return basiseval, basis.number_of_basis_functions()
 
-        basis_functions = [get_basis_function(o,d,s) for o,d,s in zip(order, der, side)]
-        
+        basis_functions = [
+            get_basis_function(o, d, s) for o, d, s in zip(order, der, side)
+        ]
+
         if face:
             nodes, weights = self.face_generator.get_quadrature_rule(np.prod(order))
         else:
             nodes, weights = self.get_quadrature_rule(np.prod(order))
-        sizes = [bn for _,bn in basis_functions]
+
+        sizes = [bn for _, bn in basis_functions]
         tensor = np.empty(sizes)
         generic_eval_basis = lambda x, index: np.prod(
-            basis_functions[k][0](x, i) for k,i in enumerate(index)
+            [basis_functions[k][0](x, i) for k, i in enumerate(index)], axis=0
         )
-        for index in itertools.product(range(size) for size in sizes):
+        for index in itertools.product(*[range(size) for size in sizes]):
             eval_basis = lambda x: generic_eval_basis(x, index)
-            tensor[*index] = quad_rules.Quadrature.quad(nodes, weights, eval_basis)
+            tensor[index] = quad_rules.Quadrature.quad(nodes, weights, eval_basis)
         return tensor
 
     def mass_matrix(self):
         if not np.any(self.M == None):
             return self.M
-        
+
         self.M = self.multilinear_form(False, [None, None])
         return self.M
 
     def stiffness_matrix(self, dim):
         if not np.any(self.K[dim] == None):
             return self.K[dim]
-        
+
         self.K[dim] = self.multilinear_form(False, [dim, None])
         return self.K[dim]
 
@@ -215,16 +234,17 @@ class dg_generator:
         matrix = self.rT(side)
         mass = self.mass_matrix()
         return np.linalg.solve(mass, matrix.T)
-    
+
     def collocate_volume(self, points):
         return base.collocate(self.generator, points)
-    
+
     def collocate_face(self, points, side):
         # points are meant to be 2D here
 
         # this method wants dim × npoints; but points is given the other way. So, we transpose it twice
         projected = self.volume_to_face_parametrisation(points.T, side).T
         return base.collocate(self.generator, projected)
+
 
 if __name__ == "__main__":
     from seissol_matrices import json_io
