@@ -61,24 +61,24 @@ class dg_generator:
 
         V[i...] = integral(1 * ... * f_i^(der))
 
-        For example, to obtain a mass matrix, choose der = [0,0].
-        For a stiffness matrix, choose der = [1,0].
-        For a trilinear form, choose der = [0,0,0].
+        For example, to obtain a mass matrix, choose der = [None,None].
+        For a stiffness matrix in x-direction, choose der = [0,None].
+        For a trilinear form, choose der = [None,None,None].
 
         Optionally can supply different orders for the basis functions. (using the order parameter)
         If not given, the order will assumed to be self.order for all constituents.
 
         Moreover, we can opt to take a projected face basis instead of a volume basis via the
-        side argument. If an entry is a negative number there, we assume the volume basis functions,
-        otherwise the respective face side.
+        side argument. If an entry is a negative number there, we assume a non-rotated face,
+        otherwise the respective face side. If an entry is None, then we assume the respective volume term.
         """
 
         # NOTE: we could extract the multiplication/quadrature part from the function selection part.
         # I.e., eval_functions (or a list of basis functions here) could be given as an input parameter,
         # instead of the two current ones.
 
-        # we do not support higher derivatives for the time being. So let's fail here for now.
-        assert np.all([d in (0,1) for d in der])
+        # we only support a first derivative at the moment
+        assert np.all([d in (None,*(i for i in range(self.dim))) for d in der])
 
         if order is None:
             order = [self.order] * len(der)
@@ -90,28 +90,30 @@ class dg_generator:
         assert len(side) == len(der)
 
         def get_basis_function(o, d, s):
-            if s < 0:
+            if s is None:
                 basis = self.generator_finder(o)
             else:
                 basis = self.face_generator.generator_finder(o)
-            basiseval_pre = basis.eval_basis if d == 0 else basis.eval_diff_basis
-            if face >= 0:
-                if side < 0:
+            basiseval_pre = basis.eval_basis if d is None else lambda x,i: basis.eval_diff_basis(x,i,d)
+            if face:
+                if s is None:
                     basiseval = lambda x, i: basiseval_pre(self.volume_to_face_parametrisation(x, face), i)
+                elif s < 0:
+                    basiseval = basiseval_pre
                 else:
                     basiseval = lambda x, i: basiseval_pre(self.face_to_face_parametrisation(x, face), i)
             else:
                 # volume * face does not make sense when evaluating on the whole volume
-                assert side < 0
+                assert s is None
                 basiseval = basiseval_pre
             return basiseval, basis.number_of_basis_functions()
 
         basis_functions = [get_basis_function(o,d,s) for o,d,s in zip(order, der, side)]
         
-        if face < 0:
-            nodes, weights = self.get_quadrature_rule(np.prod(order))
-        else:
+        if face:
             nodes, weights = self.face_generator.get_quadrature_rule(np.prod(order))
+        else:
+            nodes, weights = self.get_quadrature_rule(np.prod(order))
         sizes = [bn for _,bn in basis_functions]
         tensor = np.empty(sizes)
         generic_eval_basis = lambda x, index: np.prod(
@@ -125,33 +127,15 @@ class dg_generator:
     def mass_matrix(self):
         if not np.any(self.M == None):
             return self.M
-        number_of_basis_functions = self.generator.number_of_basis_functions()
-        self.M = np.zeros((number_of_basis_functions, number_of_basis_functions))
-
-        for i in range(number_of_basis_functions):
-            for j in range(number_of_basis_functions):
-                prod = lambda x: self.generator.eval_basis(
-                    x, i
-                ) * self.generator.eval_basis(x, j)
-                self.M[i, j] = quad_rules.Quadrature.quad(
-                    self.nodes, self.weights, prod
-                )
+        
+        self.M = self.multilinear_form(False, [None, None])
         return self.M
 
     def stiffness_matrix(self, dim):
         if not np.any(self.K[dim] == None):
             return self.K[dim]
-        number_of_basis_functions = self.generator.number_of_basis_functions()
-        self.K[dim] = np.zeros((number_of_basis_functions, number_of_basis_functions))
-
-        for i in range(number_of_basis_functions):
-            for j in range(number_of_basis_functions):
-                prod = lambda x: self.generator.eval_diff_basis(
-                    x, i, dim
-                ) * self.generator.eval_basis(x, j)
-                self.K[dim][i, j] = quad_rules.Quadrature.quad(
-                    self.nodes, self.weights, prod
-                )
+        
+        self.K[dim] = self.multilinear_form(False, [dim, None])
         return self.K[dim]
 
     def kDivM(self, dim):
@@ -186,28 +170,7 @@ class dg_generator:
 
     def face_times_face_mass_matrix(self, side):
         assert self.dim == 3
-        number_of_face_basis_functions = (
-            self.face_generator.generator.number_of_basis_functions()
-        )
-
-        projected_basis_function = (
-            lambda x, i: self.face_generator.generator.eval_basis(
-                self.face_to_face_parametrisation(x, side), i
-            )
-        )
-
-        matrix = np.zeros(
-            (number_of_face_basis_functions, number_of_face_basis_functions)
-        )
-        for i in range(number_of_face_basis_functions):
-            for j in range(number_of_face_basis_functions):
-                prod = lambda x: self.face_generator.generator.eval_basis(
-                    x, i
-                ) * projected_basis_function(x, j)
-                matrix[i, j] = quad_rules.Quadrature.quad(
-                    self.face_generator.nodes, self.face_generator.weights, prod
-                )
-        return matrix
+        return self.multilinear_form(True, [None, None], side=[-1, side])
 
     def fP(self, side):
         return self.face_times_face_mass_matrix(side)
@@ -237,25 +200,7 @@ class dg_generator:
 
     def volume_times_face_mass_matrix(self, side):
         assert self.dim == 3
-        number_of_face_basis_functions = (
-            self.face_generator.generator.number_of_basis_functions()
-        )
-
-        projected_basis_function = lambda x, i: self.generator.eval_basis(
-            self.volume_to_face_parametrisation(x, side), i
-        )
-        number_of_basis_functions = self.generator.number_of_basis_functions()
-
-        matrix = np.zeros((number_of_face_basis_functions, number_of_basis_functions))
-        for i in range(number_of_face_basis_functions):
-            for j in range(number_of_basis_functions):
-                prod = lambda x: self.face_generator.generator.eval_basis(
-                    x, i
-                ) * projected_basis_function(x, j)
-                matrix[i, j] = quad_rules.Quadrature.quad(
-                    self.face_generator.nodes, self.face_generator.weights, prod
-                )
-        return matrix
+        return self.multilinear_form(True, [None, None], side=[None, side])
 
     def fMrT(self, side):
         return self.volume_times_face_mass_matrix(side)
