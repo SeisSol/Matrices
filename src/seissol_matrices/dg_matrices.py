@@ -62,7 +62,7 @@ class dg_generator:
 
         return quad_rules.Quadrature.transform(n, w, self.geometry)
 
-    def multilinear_form(self, face, der, order=None, side=None):
+    def multilinear_form(self, face, der, order=None, dim=None, side=None):
         """
         Given an array der, we compute a tensor V[i...] of dimension
         len(der) defined by (given in C++ parameter pack notation)
@@ -94,11 +94,14 @@ class dg_generator:
         if side is None:
             side = [None] * len(der)
 
+        if dim is None:
+            dim = [2] * len(der) if face else [3] * len(der)
+
         assert len(order) == len(der)
         assert len(side) == len(der)
 
-        def get_basis_function(o, d, s):
-            if s is None:
+        def get_basis_function(o, d, s, r):
+            if r == 3:
                 basis = self.generator_finder(o)
             else:
                 basis = self.face_generator.generator_finder(o)
@@ -108,30 +111,31 @@ class dg_generator:
                 else lambda x, i: basis.eval_diff_basis(x, i, d)
             )
             if face:
-                if s is None:
+                if r == 3:
                     basiseval = lambda x, i: basiseval_pre(
-                        self.volume_to_face_parametrisation(x, face), i
+                        self.volume_to_face_parametrisation(x, s), i
                     )
-                elif s < 0:
-                    basiseval = basiseval_pre
                 else:
-                    basiseval = lambda x, i: basiseval_pre(
-                        self.face_to_face_parametrisation(x, face), i
-                    )
+                    if s is None:
+                        basiseval = basiseval_pre
+                    else:
+                        basiseval = lambda x, i: basiseval_pre(
+                            self.face_to_face_parametrisation(x, s), i
+                        )
             else:
                 # volume * face does not make sense when evaluating on the whole volume
-                assert s is None
+                assert r == 3
                 basiseval = basiseval_pre
             return basiseval, basis.number_of_basis_functions()
 
         basis_functions = [
-            get_basis_function(o, d, s) for o, d, s in zip(order, der, side)
+            get_basis_function(o, d, s, r) for o, d, s, r in zip(order, der, side, dim)
         ]
 
         if face:
-            nodes, weights = self.face_generator.get_quadrature_rule(np.prod(order))
+            nodes, weights = self.face_generator.get_quadrature_rule(np.sum(order))
         else:
-            nodes, weights = self.get_quadrature_rule(np.prod(order))
+            nodes, weights = self.get_quadrature_rule(np.sum(order))
 
         sizes = [bn for _, bn in basis_functions]
         tensor = np.empty(sizes)
@@ -189,7 +193,7 @@ class dg_generator:
 
     def face_times_face_mass_matrix(self, side):
         assert self.dim == 3
-        return self.multilinear_form(True, [None, None], side=[-1, side])
+        return self.multilinear_form(True, [None, None], side=[None, side], dim=[2, 2])
 
     def fP(self, side):
         return self.face_times_face_mass_matrix(side)
@@ -219,7 +223,7 @@ class dg_generator:
 
     def volume_times_face_mass_matrix(self, side):
         assert self.dim == 3
-        return self.multilinear_form(True, [None, None], side=[None, side])
+        return self.multilinear_form(True, [None, None], side=[None, side], dim=[2, 3])
 
     def fMrT(self, side):
         return self.volume_times_face_mass_matrix(side)
