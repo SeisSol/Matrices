@@ -11,14 +11,14 @@ def main():
 
         vtkpoints2 = {}
         vtkpoints3 = {}
-        for deg in range(0, 8):
+        for deg in range(0, 9):
             vtkpoints2[deg] = vtk_lagrange_2d(deg)
             vtkpoints3[deg] = vtk_lagrange_3d(deg)
             json_io.write_matrix(vtkpoints2[deg].T, f"vtk2d({deg})", f"vtkbase.json")
             json_io.write_matrix(vtkpoints3[deg].T, f"vtk3d({deg})", f"vtkbase.json")
-        for basisorder in range(2, 8):
+        for basisorder in range(2, 9):
             dggen = dg_generator(basisorder, 3)
-            for deg in range(0, 8):
+            for deg in range(0, 9):
                 json_io.write_matrix(
                     dggen.collocate_volume(vtkpoints3[deg]).T,
                     f"collvv({basisorder},{deg})",
