@@ -26,7 +26,7 @@ class PlasticityGenerator:
             )
         else:
             nodes, _ = stroud.stroud(self.order + 1)
-        
+
         return nodes
 
     def generate_Vandermonde(self, mode):
