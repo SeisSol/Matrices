@@ -2,7 +2,7 @@
 
 import numpy as np
 import os
-from seissol_matrices import basis_functions, dg_matrices, xml_io
+from seissol_matrices import basis_functions, dg_matrices, json_io
 from seissol_matrices.plasticity import stroud
 
 
@@ -18,7 +18,7 @@ class PlasticityGenerator:
         self.dg3_generator = dg_matrices.dg_generator(order, d=3)
         self.order = order
 
-    def generate_Vandermonde(self, mode):
+    def nodes(self, mode):
         assert mode in ["ip", "nb"]
         if mode == "nb":
             nodes = parse_nodes(
@@ -26,6 +26,11 @@ class PlasticityGenerator:
             )
         else:
             nodes, _ = stroud.stroud(self.order + 1)
+
+        return nodes
+
+    def generate_Vandermonde(self, mode):
+        nodes = self.nodes(mode)
         m = self.bf3_generator.number_of_basis_functions()
         n = nodes.shape[0]
 
@@ -37,6 +42,23 @@ class PlasticityGenerator:
                 vandermonde[i, j] = self.bf3_generator.eval_basis(
                     [node[0], node[1], node[2]], j
                 )
+
+        return vandermonde
+
+    def generate_VandermondeDerivative(self, mode):
+        nodes = self.nodes(mode)
+        m = self.bf3_generator.number_of_basis_functions()
+        n = nodes.shape[0]
+
+        vandermonde = np.zeros((3, n, m))
+
+        for k in range(3):
+            for i in range(n):
+                for j in range(m):
+                    node = nodes[i]
+                    vandermonde[k, i, j] = self.bf3_generator.eval_diff_basis(
+                        [node[0], node[1], node[2]], j, k
+                    )
 
         return vandermonde
 
@@ -57,10 +79,12 @@ class PlasticityGenerator:
 
 if __name__ == "__main__":
     for mode in ["nb", "ip"]:
-        for order in range(2, 8):
+        for order in range(2, 9):
             generator = PlasticityGenerator(order)
             vandermonde = generator.generate_Vandermonde(mode)
+            vandermondeDerivative = generator.generate_VandermondeDerivative(mode)
             vandermonde_inv = generator.generate_Vandermonde_inv(mode)
-            filename = f"output/plasticity_{mode}_matrices_{order}.xml"
-            xml_io.write_matrix(vandermonde, "v", filename)
-            xml_io.write_matrix(vandermonde_inv, "vInv", filename)
+            filename = f"output/plasticity_{mode}_matrices_{order}.json"
+            json_io.write_matrix(vandermonde, "v", filename)
+            json_io.write_matrix(vandermondeDerivative, "vD", filename)
+            json_io.write_matrix(vandermonde_inv, "vInv", filename)
