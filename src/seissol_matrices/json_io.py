@@ -2,6 +2,7 @@ import numpy as np
 import json
 import os
 import re
+import itertools
 
 
 def read_json(filename):
@@ -22,35 +23,50 @@ def create_empty_json_file(filename):
     write_json([], filename)
 
 
-def write_matrix(matrix, matrixname, filename):
+def write_tensor(tensor, tensorname, filename):
     if not os.path.exists(filename):
         create_empty_json_file(filename)
 
-    matrix_list = read_json(filename)
-    assert isinstance(matrix_list, list)
+    tensor_list = read_json(filename)
+    assert isinstance(tensor_list, list)
 
-    rows, columns = matrix.shape
     entries = []
-    for r in range(rows):
-        for c in range(columns):
-            if np.abs(matrix[r, c]) > 1e-14:
-                entries.append([r + 1, c + 1, str(matrix[r, c])])
-    m = {"name": matrixname, "rows": rows, "columns": columns, "entries": entries}
-    matrix_list.append(m)
-    write_json(matrix_list, filename)
+    for index in itertools.product(*[range(dim) for dim in tensor.shape]):
+        if np.abs(tensor[tuple(index)]) > 1e-14:
+            entries.append([i + 1 for i in index] + [str(tensor[tuple(index)])])
+    m = {"name": tensorname, "shape": tensor.shape, "entries": entries}
+    tensor_list.append(m)
+    write_json(tensor_list, filename)
 
 
-def read_matrix(matrixname, filename):
-    matrix_list = read_json(filename)
-    for raw_matrix in matrix_list:
-        if raw_matrix["name"] == matrixname:
-            rows = int(raw_matrix["rows"])
-            columns = int(raw_matrix["columns"])
-            matrix = np.zeros((rows, columns))
-            for entry in raw_matrix["entries"]:
-                i = entry[0] - 1
-                j = entry[1] - 1
-                value = entry[2]
-                matrix[i, j] = value
-            return matrix
-    raise ValueError(f"Matrix with name {matrixname} not found in {filename}.")
+def read_tensor(tensorname, filename):
+    tensor_list = read_json(filename)
+    for raw_tensor in tensor_list:
+        if raw_tensor["name"] == tensorname:
+            # we still support the old format here
+            if "rows" in raw_tensor:
+                shape = [int(raw_tensor["rows"])]
+                if "columns" in raw_tensor:
+                    shape += [int(raw_tensor["columns"])]
+            else:
+                shape = [int(dim) for dim in raw_tensor["shape"]]
+
+            dims = len(shape)
+            tensor = np.zeros(shape)
+            for entry in raw_tensor["entries"]:
+                index = tuple(entry[i] - 1 for i in range(dims))
+                value = entry[-1]
+                tensor[index] = value
+            return tensor
+    raise ValueError(f"Tensor with name {tensorname} not found in {filename}.")
+
+
+# legacy function names
+
+
+def write_matrix(tensor, tensorname, filename):
+    write_tensor(tensor, tensorname, filename)
+
+
+def read_matrix(tensorname, filename):
+    return read_tensor(tensorname, filename)
