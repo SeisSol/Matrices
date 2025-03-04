@@ -15,70 +15,63 @@ class dr_generator:
         self.dg3_generator = dg_matrices.dg_generator(self.order, 3)
         self.dg2_generator = dg_matrices.dg_generator(self.order, 2)
 
-    def V3mTo2n(self, a, b):
+    def V3mTo2n(self, a, b, matorder=None):
         m = self.bf3_generator.number_of_basis_functions()
         points = self.quadrule.points()
         n = points.shape[0]
 
-        matrix = np.zeros((n, m))
+        if matorder is None:
+            evalfun = lambda q, j, k: self.bf3_generator.eval_basis(q, j)
+            materialdim = 1
+        else:
+            materialbasis = basis_functions.BasisFunctionGenerator3D(matorder)
+            evalfun = lambda q, j, k: self.bf3_generator.eval_basis(
+                q, j
+            ) * materialbasis.eval_basis(q, k)
+            materialdim = materialbasis.number_of_basis_functions()
+
+        matrix = np.zeros((materialdim, n, m))
         for i, p in enumerate(points):
             for j in range(m):
-                if a == 0 and b == 0:
-                    matrix[i, j] = self.bf3_generator.eval_basis([p[1], p[0], 0], j)
-                if a == 0 and b == 1:
-                    matrix[i, j] = self.bf3_generator.eval_basis([p[0], p[1], 0], j)
-                if a == 0 and b == 2:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [p[1], 1 - p[0] - p[1], 0], j
-                    )
-                if a == 0 and b == 3:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [1 - p[0] - p[1], p[0], 0], j
-                    )
-                if a == 1 and b == 0:
-                    matrix[i, j] = self.bf3_generator.eval_basis([p[0], 0, p[1]], j)
-                if a == 1 and b == 1:
-                    matrix[i, j] = self.bf3_generator.eval_basis([p[1], 0, p[0]], j)
-                if a == 1 and b == 2:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [1 - p[0] - p[1], 0, p[1]], j
-                    )
-                if a == 1 and b == 3:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [p[0], 0, 1 - p[0] - p[1]], j
-                    )
-                if a == 2 and b == 0:
-                    matrix[i, j] = self.bf3_generator.eval_basis([0, p[1], p[0]], j)
-                if a == 2 and b == 1:
-                    matrix[i, j] = self.bf3_generator.eval_basis([0, p[0], p[1]], j)
-                if a == 2 and b == 2:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [0, p[1], 1 - p[0] - p[1]], j
-                    )
-                if a == 2 and b == 3:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [0, 1 - p[0] - p[1], p[0]], j
-                    )
-                if a == 3 and b == 0:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [1 - p[0] - p[1], p[0], p[1]], j
-                    )
-                if a == 3 and b == 1:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [1 - p[0] - p[1], p[1], p[0]], j
-                    )
-                if a == 3 and b == 2:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [p[0], 1 - p[0] - p[1], p[1]], j
-                    )
-                if a == 3 and b == 3:
-                    matrix[i, j] = self.bf3_generator.eval_basis(
-                        [p[1], p[0], 1 - p[0] - p[1]], j
-                    )
+                for k in range(materialdim):
+                    if a == 0 and b == 0:
+                        matrix[k, i, j] = evalfun([p[1], p[0], 0], j, k)
+                    if a == 0 and b == 1:
+                        matrix[k, i, j] = evalfun([p[0], p[1], 0], j, k)
+                    if a == 0 and b == 2:
+                        matrix[k, i, j] = evalfun([p[1], 1 - p[0] - p[1], 0], j, k)
+                    if a == 0 and b == 3:
+                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], p[0], 0], j, k)
+                    if a == 1 and b == 0:
+                        matrix[k, i, j] = evalfun([p[0], 0, p[1]], j, k)
+                    if a == 1 and b == 1:
+                        matrix[k, i, j] = evalfun([p[1], 0, p[0]], j, k)
+                    if a == 1 and b == 2:
+                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], 0, p[1]], j, k)
+                    if a == 1 and b == 3:
+                        matrix[k, i, j] = evalfun([p[0], 0, 1 - p[0] - p[1]], j, k)
+                    if a == 2 and b == 0:
+                        matrix[k, i, j] = evalfun([0, p[1], p[0]], j, k)
+                    if a == 2 and b == 1:
+                        matrix[k, i, j] = evalfun([0, p[0], p[1]], j, k)
+                    if a == 2 and b == 2:
+                        matrix[k, i, j] = evalfun([0, p[1], 1 - p[0] - p[1]], j, k)
+                    if a == 2 and b == 3:
+                        matrix[k, i, j] = evalfun([0, 1 - p[0] - p[1], p[0]], j, k)
+                    if a == 3 and b == 0:
+                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], p[0], p[1]], j, k)
+                    if a == 3 and b == 1:
+                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], p[1], p[0]], j, k)
+                    if a == 3 and b == 2:
+                        matrix[k, i, j] = evalfun([p[0], 1 - p[0] - p[1], p[1]], j, k)
+                    if a == 3 and b == 3:
+                        matrix[k, i, j] = evalfun([p[1], p[0], 1 - p[0] - p[1]], j, k)
+        if matorder is None:
+            matrix = np.squeeze(matrix)
         return matrix
 
-    def V3mTo2nTWDivM(self, a, b):
-        matrix = self.V3mTo2n(a, b)
+    def V3mTo2nTWDivM(self, a, b, matorder=None):
+        matrix = self.V3mTo2n(a, b, matorder)
         mass = self.dg3_generator.mass_matrix()
         weights = self.quadrule.weights()
         n = weights.shape[0]
@@ -86,7 +79,9 @@ class dr_generator:
         for i in range(n):
             W[i, i] = weights[i]
 
-        return np.linalg.solve(mass, np.dot(matrix.T, W))
+        matrixT = matrix.T if matorder is None else matrix.transpose((0, 2, 1))
+
+        return np.linalg.solve(mass, np.dot(matrixT, W))
 
     def quadpoints(self):
         points = self.quadrule.points()

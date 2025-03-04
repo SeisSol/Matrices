@@ -161,17 +161,31 @@ class dg_generator:
         self.K[dim] = self.multilinear_form(False, [dim, None])
         return self.K[dim]
 
-    def kDivM(self, dim):
-        stiffness = self.stiffness_matrix(dim)
+    def kDivM(self, dim, matorder=None):
         mass = self.mass_matrix()
-
+        if matorder is None:
+            stiffness = self.stiffness_matrix(dim)
+        else:
+            stiffness = self.multilinear_form(
+                False, [None, dim, None], order=[matorder, self.order, self.order]
+            )
         return np.linalg.solve(mass, stiffness)
 
-    def kDivMT(self, dim):
-        stiffness = self.stiffness_matrix(dim)
+    def kDivMT(self, dim, matorder=None):
         mass = self.mass_matrix()
+        if matorder is None:
+            stiffness = self.stiffness_matrix(dim)
+            sT = stiffness.T
+        else:
+            correct1 = self.multilinear_form(
+                False, [dim, None, None], order=[matorder, self.order, self.order]
+            )
+            correct2 = self.multilinear_form(
+                False, [None, None, dim], order=[matorder, self.order, self.order]
+            )
+            sT = correct1 + correct2
 
-        return np.linalg.solve(mass, stiffness.T)
+        return np.linalg.solve(mass, sT)
 
     def face_to_face_parametrisation(self, x, side):
         # implement Dumbser & Käser, 2006 Table 2 b)
@@ -233,11 +247,22 @@ class dg_generator:
         mass = self.face_generator.mass_matrix()
         return np.linalg.solve(mass, matrix)
 
-    def rDivM(self, side):
+    def rDivM(self, side, matorder=None):
         assert self.dim == 3
-        matrix = self.rT(side)
         mass = self.mass_matrix()
-        return np.linalg.solve(mass, matrix.T)
+        if matorder is None:
+            matrix = self.rT(side).T
+        else:
+            prematrix = self.multilinear_form(
+                True,
+                [None, None, None],
+                order=[matorder, self.order, self.order],
+                side=[None, None, side],
+                dim=[3, 2, 3],
+            )
+            facemass = self.face_generator.mass_matrix()
+            matrix = np.linalg.solve(facemass, prematrix).transpose((0, 2, 1))
+        return np.linalg.solve(mass, matrix)
 
     def collocate_volume(self, points):
         return base.collocate(self.generator, points)
