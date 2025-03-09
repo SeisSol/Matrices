@@ -17,23 +17,23 @@ def main():
         for deg in range(0, 9):
             vtkpoints2[deg] = vtk_lagrange_2d(deg)
             vtkpoints3[deg] = vtk_lagrange_3d(deg)
-            json_io.write_matrix(vtkpoints2[deg].T, f"vtk2d({deg})", f"vtkbase.json")
-            json_io.write_matrix(vtkpoints3[deg].T, f"vtk3d({deg})", f"vtkbase.json")
+            json_io.write_tensor(vtkpoints2[deg].T, f"vtk2d({deg})", f"vtkbase.json")
+            json_io.write_tensor(vtkpoints3[deg].T, f"vtk3d({deg})", f"vtkbase.json")
         for basisorder in range(2, 9):
             dggen = dg_generator(basisorder, 3)
             for deg in range(0, 9):
-                json_io.write_matrix(
+                json_io.write_tensor(
                     dggen.collocate_volume(vtkpoints3[deg]).T,
                     f"collvv({basisorder},{deg})",
                     f"vtko{basisorder}.json",
                 )
-                json_io.write_matrix(
+                json_io.write_tensor(
                     dggen.face_generator.collocate_volume(vtkpoints2[deg]).T,
                     f"collff({basisorder},{deg})",
                     f"vtko{basisorder}.json",
                 )
                 for f in range(4):
-                    json_io.write_matrix(
+                    json_io.write_tensor(
                         dggen.collocate_face(vtkpoints2[deg], f).T,
                         f"collvf({basisorder},{deg},{f})",
                         f"vtko{basisorder}.json",
@@ -88,21 +88,21 @@ def main():
                 V2QuadTo2m = generator.V2QuadTo2m()
                 V2mTo2Quad = generator.V2mTo2Quad()
 
-                json_io.write_matrix(quadpoints, "quadpoints", filename)
-                json_io.write_matrix(
+                json_io.write_tensor(quadpoints, "quadpoints", filename)
+                json_io.write_tensor(
                     quadweights.reshape(-1, 1), "quadweights", filename
                 )
-                json_io.write_matrix(resample, "resample", filename)
-                json_io.write_matrix(V2QuadTo2m, "V2QuadTo2m", filename)
-                json_io.write_matrix(V2mTo2Quad, "V2mTo2Quad", filename)
+                json_io.write_tensor(resample, "resample", filename)
+                json_io.write_tensor(V2QuadTo2m, "V2QuadTo2m", filename)
+                json_io.write_tensor(V2mTo2Quad, "V2mTo2Quad", filename)
                 for a in range(0, 4):
                     for b in range(0, 4):
                         V3mTo2n = generator.V3mTo2n(a, b)
                         V3mTo2nTWDivM = generator.V3mTo2nTWDivM(
                             a, b, matorder=materialorder
                         )
-                        json_io.write_matrix(V3mTo2n, f"V3mTo2n({a},{b})", filename)
-                        json_io.write_matrix(
+                        json_io.write_tensor(V3mTo2n, f"V3mTo2n({a},{b})", filename)
+                        json_io.write_tensor(
                             V3mTo2nTWDivM, f"V3mTo2nTWDivM({a},{b})", filename
                         )
     elif sys.argv[1] == "hom":
@@ -114,9 +114,28 @@ def main():
             generator = PlasticityGenerator(materialorder)
             points = generator.nodes(mode)
             interpolator = generator.generate_Vandermonde_inv(mode)
+            deinterpolator = generator.generate_Vandermonde(mode)
 
-            json_io.write_matrix(points, "hompoints", filename)
-            json_io.write_matrix(interpolator, "homproject", filename)
+            json_io.write_tensor(points, "hompoints", filename)
+            json_io.write_tensor(interpolator, "homproject", filename)
+            json_io.write_tensor(deinterpolator, "homiproject", filename)
+            for order in range(2, 9):
+                for quadname, quadrule in zip(
+                    ["stroud", "dunavant", "witherden_vincent"],
+                    [
+                        quad_points.stroud(order + 1),
+                        quad_points.dunavant(order + 1),
+                        quad_points.witherden_vincent(order + 1),
+                    ],
+                ):
+                    filename = f"homdr-{mode}-{quadname}-{order}-h{materialorder}.json"
+                    generator = dr_generator(materialorder, quadrule)
+                    for a in range(0, 4):
+                        for b in range(0, 4):
+                            V3mTo2n = generator.V3mTo2n(a, b)
+                            json_io.write_tensor(
+                                V3mTo2n, f"homV3mTo2n({a},{b})", filename
+                            )
 
 
 if __name__ == "__main__":
