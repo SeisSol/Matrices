@@ -1,3 +1,5 @@
 __pycache__
 
-*.lock
+# don't commit the lock; it may get outdated to quickly
+poetry.lock
+

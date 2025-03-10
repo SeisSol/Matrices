@@ -23,3 +23,16 @@ If we use basis functions for order $\mathcal{O}$, we have $\frac{1}{6} \times \
 | $M_{kl}$           | $\int_T \Psi_k \Psi_l dx$                     | `M3`               |
 |                    | $\int_T \Phi_k \Phi_l dx$                     | `M2`               |
 | $F_{kl}^{-,j}$     | $\int_T \Psi_k \Psi_l dx$                     | `rT`               |
+
+## Usage
+
+Use poetry to install or use the package. In particular, consider the commands
+
+```
+# install
+poetry install
+# format files
+poetry run black src
+# run unit tests
+poetry run coverage run -m nose2
+```
