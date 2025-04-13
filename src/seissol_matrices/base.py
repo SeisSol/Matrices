@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def collocate(basis, points):
+def collocate(basis, points, deriv=None):
     # takes a basis object, and a points array
     # of the form: npoints × dim
     # outputs a collocation matrix of the form
@@ -15,8 +15,12 @@ def collocate(basis, points):
 
     nbasis = basis.number_of_basis_functions()
 
+    evalfun = lambda j, i: basis.eval_basis(points[j, :], i)
+    if deriv is not None:
+        evalfun = lambda j, i: basis.eval_diff_basis(points[j, :], i, deriv)
+
     coll = np.empty((nbasis, points.shape[0]))
     for i in range(nbasis):
         for j in range(points.shape[0]):
-            coll[i, j] = basis.eval_basis(points[j, :], i)
+            coll[i, j] = evalfun(j, i)
     return coll
