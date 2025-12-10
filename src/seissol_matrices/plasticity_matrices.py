@@ -81,10 +81,12 @@ if __name__ == "__main__":
     for mode in ["nb", "ip"]:
         for order in range(2, 9):
             generator = PlasticityGenerator(order)
+            nodes = generator.nodes(mode)
             vandermonde = generator.generate_Vandermonde(mode)
             vandermondeDerivative = generator.generate_VandermondeDerivative(mode)
             vandermonde_inv = generator.generate_Vandermonde_inv(mode)
-            filename = f"output/plasticity_{mode}_matrices_{order}.json"
+            filename = f"output/plasticity-{mode}-matrices-{order}.json"
+            json_io.write_matrix(nodes, "vNodes", filename)
             json_io.write_matrix(vandermonde, "v", filename)
             json_io.write_matrix(vandermondeDerivative, "vD", filename)
             json_io.write_matrix(vandermonde_inv, "vInv", filename)
