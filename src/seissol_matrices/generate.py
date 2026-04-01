@@ -5,6 +5,7 @@ from dr_matrices import dr_generator
 from vtk_points import vtk_lagrange_2d, vtk_lagrange_3d
 from seissol_matrices import quad_points
 from plasticity_matrices import PlasticityGenerator
+import numpy as np
 
 
 def main():
@@ -136,6 +137,69 @@ def main():
                             json_io.write_tensor(
                                 V3mTo2n, f"homV3mTo2n({a},{b})", filename
                             )
+    elif sys.argv[1] == "elementwise":
+        for basisorder in range(2, 9):
+            dggen = dg_generator(basisorder, 3)
+            json_io.write_tensor(
+                dggen.nodes,
+                f"ew_quad_nodes_vv",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                dggen.weights,
+                f"ew_quad_weights_v",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                dggen.face_generator.nodes,
+                f"ew_quad_nodes_ff",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                dggen.face_generator.weights,
+                f"ew_quad_weights_f",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                dggen.collocate_volume(dggen.nodes).T,
+                f"ew_collocate_f_vv",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                np.stack(
+                    [dggen.collocate_volume(dggen.nodes, d).T for d in range(3)],
+                    axis=-1,
+                ),
+                f"ew_collocate_df_vv",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                dggen.face_generator.collocate_volume(dggen.face_generator.nodes).T,
+                f"ew_collocate_f_ff",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                np.stack(
+                    [
+                        dggen.volume_to_face_parametrisation(dggen.nodes.T, f).T
+                        for f in range(4)
+                    ],
+                    axis=-1,
+                ),
+                f"ew_quad_nodes_vf",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
+            json_io.write_tensor(
+                np.stack(
+                    [
+                        dggen.collocate_face(dggen.face_generator.nodes, f).T
+                        for f in range(4)
+                    ],
+                    axis=-1,
+                ),
+                f"ew_collocate_f_vf",
+                f"elemwise-collocate-p{basisorder}.json",
+            )
 
 
 if __name__ == "__main__":

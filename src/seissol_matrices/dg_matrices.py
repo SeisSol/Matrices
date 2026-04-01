@@ -264,15 +264,15 @@ class dg_generator:
             matrix = np.linalg.solve(facemass, prematrix).transpose((0, 2, 1))
         return np.linalg.solve(mass, matrix)
 
-    def collocate_volume(self, points):
-        return base.collocate(self.generator, points)
+    def collocate_volume(self, points, deriv=None):
+        return base.collocate(self.generator, points, deriv)
 
-    def collocate_face(self, points, side):
+    def collocate_face(self, points, side, deriv=None):
         # points are meant to be 2D here
 
         # this method wants dim × npoints; but points is given the other way. So, we transpose it twice
         projected = self.volume_to_face_parametrisation(points.T, side).T
-        return base.collocate(self.generator, projected)
+        return base.collocate(self.generator, projected, deriv)
 
 
 if __name__ == "__main__":
