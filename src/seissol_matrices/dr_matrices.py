@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+from seissol_matrices import base
 from seissol_matrices import basis_functions
 from seissol_matrices import dg_matrices
 from seissol_matrices import quad_points
@@ -79,9 +80,11 @@ class dr_generator:
         for i in range(n):
             W[i, i] = weights[i]
 
-        matrixT = matrix.T if matorder is None else matrix.transpose((0, 2, 1))
+        if matorder is None:
+            return np.linalg.solve(mass, np.dot(matrix.T, W))
 
-        return np.linalg.solve(mass, np.dot(matrixT, W))
+        matrixT = matrix.transpose((0, 2, 1))
+        return base.material_index_last(np.linalg.solve(mass, np.dot(matrixT, W)))
 
     def quadpoints(self):
         points = self.quadrule.points()
