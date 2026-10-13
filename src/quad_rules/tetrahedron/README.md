@@ -21,3 +21,4 @@ on the reference tetrahedron (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)
 | `witherden-vincent` | 1–10 | yes | Witherden, Vincent (2015), via PyFR | BSD 3-Clause (PyFR) |
 | `witherden` | 10–20 (without 14) | yes | Witherden (2023), via PyFR | BSD 3-Clause (PyFR) |
 | `xiao-gimbutas` | 1–15 | no | Xiao, Gimbutas (2010), via quadraturerules.org | CC BY 4.0 |
+| `jaskowiec-sukumar-symmetric` | 1–20 | yes | Jaśkowiec, Sukumar (2021), via modepy | CC BY 4.0 |

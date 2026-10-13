@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 
 from quad_rules import Quadrature
+from quad_rules.JaskowiecSukumarSymmetric import JaskowiecSukumarSymmetric
 from quad_rules.TabulatedTet import barycentric, is_fully_symmetric
 from quad_rules.WitherdenVincentTet import WitherdenVincentTet
 from quad_rules.WitherdenTet import WitherdenTet
@@ -96,6 +97,14 @@ class test_xiao_gimbutas(tabulated_tet_tester, unittest.TestCase):
     def setUpClass(cls):
         cls.rule = XiaoGimbutasTet()
         cls.degrees = list(range(1, 16))
+
+
+class test_jaskowiec_sukumar_symmetric(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = JaskowiecSukumarSymmetric()
+        cls.degrees = list(range(1, 21))
+        cls.symmetric = True
 
 
 if __name__ == "__main__":

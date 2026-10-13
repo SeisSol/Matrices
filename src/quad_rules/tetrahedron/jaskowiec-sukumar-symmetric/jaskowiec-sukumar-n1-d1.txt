@@ -1,0 +1,5 @@
+# Jaskowiec-Sukumar symmetric rule for the tetrahedron, degree 1, 1 points
+# source: modepy 2026.1, modepy/quadrature/jaskowiec_sukumar_tet_data.py (tet_data[0]), CC BY 4.0, Jan Jaskowiec and N. Sukumar; see README.md
+# converted exactly from the unit tetrahedron: (l1, l2, l3) = (x, y, z), l0 = 1 - x - y - z
+# columns: l0 l1 l2 l3 weight (barycentric coordinates; the weights sum to 1)
+0.25 0.25 0.25 0.25 1
