@@ -1,8 +1,10 @@
 # Some quadrature rules for line segments, triangles and tetrahedra
 
 * The reference element in 1D is the line segment [-1, 1].
-* The reference element in 2D is the triangle spaned by the nodes (-1, -1), (1, 0), (0, 1).
-* The reference element in 3D is the tetrahedron spaned by the nodes (-1, -1, -1), (1, 0, 0), (0, 1, 0), (0, 0, 1).
+* The reference element in 2D is the triangle spanned by the nodes (-1, -1), (1, -1), (-1, 1).
+* The reference element in 3D is the tetrahedron spanned by the nodes (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1).
+
+Tetrahedral rules can also be read from text files, see [tetrahedron/README.md](tetrahedron/README.md).
 
 Use as
 ```

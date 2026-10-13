@@ -28,8 +28,8 @@ def transform(nodes, weights, new_corners):
 
     By convention, the reference elements are:
     1D: -1, 1
-    2D: (-1, -1), (1, 0), (0, 1)
-    3D: (-1, -1, -1), (1, 0, 0), (0, 1, 0), (0, 0, 1)
+    2D: (-1, -1), (1, -1), (-1, 1)
+    3D: (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)
 
     Parameters
     ----------
