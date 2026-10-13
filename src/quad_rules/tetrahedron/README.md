@@ -23,3 +23,11 @@ on the reference tetrahedron (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)
 | `xiao-gimbutas` | 1–15 | no | Xiao, Gimbutas (2010), via quadraturerules.org | CC BY 4.0 |
 | `jaskowiec-sukumar-symmetric` | 1–20 | yes | Jaśkowiec, Sukumar (2021), via modepy | CC BY 4.0 |
 | `reduced-symmetric` | 12, 14 | yes | computed for SeisSol from the Jaśkowiec–Sukumar rules | CC BY 4.0 (adapted) |
+
+## Selection of symmetric rules
+
+`quad_rules.SymmetricTet` picks, for each degree, the rule with the fewest points among the families above
+that is invariant under all permutations of the vertices, has positive weights and keeps all barycentric
+coordinates above 1e-3 (the table `RULES` there; `tests/test_tet_rules.py` checks that it is the cheapest).
+It returns the points ordered by orbits of the vertex permutations, an order that SeisSol reproduces for its
+plasticity points.

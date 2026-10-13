@@ -8,7 +8,8 @@ import numpy as np
 from quad_rules import Quadrature
 from quad_rules.JaskowiecSukumarSymmetric import JaskowiecSukumarSymmetric
 from quad_rules.ReducedSymmetricTet import ReducedSymmetricTet
-from quad_rules.TabulatedTet import barycentric, is_fully_symmetric
+from quad_rules.SymmetricTet import MIN_BARYCENTRIC, SymmetricTet, orbit_barycentric
+from quad_rules.TabulatedTet import barycentric, is_fully_symmetric, read_rule
 from quad_rules.WitherdenVincentTet import WitherdenVincentTet
 from quad_rules.WitherdenTet import WitherdenTet
 from quad_rules.XiaoGimbutasTet import XiaoGimbutasTet
@@ -120,6 +121,77 @@ class test_reduced_symmetric(tabulated_tet_tester, unittest.TestCase):
         others = JaskowiecSukumarSymmetric()
         for degree, (points, weights) in self.rule.data.items():
             self.assertLess(points.shape[0], others.data[degree][0].shape[0])
+
+
+class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = SymmetricTet()
+        cls.degrees = [1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        cls.symmetric = True
+        cls.min_barycentric = MIN_BARYCENTRIC
+
+    def test_same_rules_as_files(self):
+        # reordered by orbits, the rules hold the points and weights of their files
+        for degree, path in self.rule.files.items():
+            points, weights = read_rule(path)
+            ordered, ordered_weights = self.rule.data[degree]
+            distance = np.linalg.norm(points[:, None, :] - ordered[None, :, :], axis=2)
+            partner = np.argmin(distance, axis=1)
+            self.assertLess(
+                distance[np.arange(len(points)), partner].max(),
+                1e-13,
+                f"degree {degree}",
+            )
+            self.assertEqual(
+                sorted(partner), list(range(len(points))), f"degree {degree}"
+            )
+            self.assertLess(
+                np.abs(weights - ordered_weights[partner]).max(),
+                1e-14,
+                f"degree {degree}",
+            )
+
+    def test_fewest_points(self):
+        families = [
+            WitherdenVincentTet(),
+            WitherdenTet(),
+            XiaoGimbutasTet(),
+            JaskowiecSukumarSymmetric(),
+            ReducedSymmetricTet(),
+        ]
+        admissible = []
+        for family in families:
+            for degree, (points, weights) in family.data.items():
+                if (
+                    weights.min() > 0
+                    and barycentric(points).min() > MIN_BARYCENTRIC
+                    and is_fully_symmetric(points, weights)
+                ):
+                    admissible.append((degree, points.shape[0]))
+        for degree in range(21):
+            fewest = min(n for d, n in admissible if d >= degree)
+            points, _ = self.rule.find_best_rule(degree)
+            self.assertEqual(points.shape[0], fewest, f"degree {degree}")
+
+    def test_orbit_order(self):
+        # SeisSol reproduces this order of the points of an orbit
+        np.testing.assert_allclose(
+            orbit_barycentric("S4", [0.1]),
+            [
+                [0.1, 0.1, 0.1, 0.7],
+                [0.1, 0.1, 0.7, 0.1],
+                [0.1, 0.7, 0.1, 0.1],
+                [0.7, 0.1, 0.1, 0.1],
+            ],
+            atol=1e-15,
+        )
+        points = orbit_barycentric("S12", [0.1, 0.2])
+        self.assertEqual(points.shape, (12, 4))
+        np.testing.assert_allclose(
+            points[:3],
+            [[0.1, 0.1, 0.2, 0.6], [0.1, 0.1, 0.6, 0.2], [0.1, 0.2, 0.1, 0.6]],
+        )
 
 
 if __name__ == "__main__":
