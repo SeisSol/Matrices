@@ -8,6 +8,7 @@ import numpy as np
 from quad_rules import Quadrature
 from quad_rules.TabulatedTet import barycentric, is_fully_symmetric
 from quad_rules.WitherdenVincentTet import WitherdenVincentTet
+from quad_rules.WitherdenTet import WitherdenTet
 
 UNIT_TETRAHEDRON = np.array(
     [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -77,6 +78,16 @@ class test_witherden_vincent(tabulated_tet_tester, unittest.TestCase):
         points, weights = self.rule.find_best_rule(4)
         self.assertEqual(points.shape, (14, 3))
         self.assertAlmostEqual(weights.sum(), 4.0 / 3.0, delta=1e-14)
+
+
+class test_witherden(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = WitherdenTet()
+        cls.degrees = [10, 11, 12, 13, 15, 16, 17, 18, 19, 20]
+        cls.symmetric = True
+        # some rules have points on the boundary
+        cls.min_barycentric = -1e-14
 
 
 if __name__ == "__main__":

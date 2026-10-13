@@ -19,3 +19,4 @@ on the reference tetrahedron (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)
 | Directory | Degrees | Fully symmetric | Source | License |
 | --------- | ------- | --------------- | ------ | ------- |
 | `witherden-vincent` | 1–10 | yes | Witherden, Vincent (2015), via PyFR | BSD 3-Clause (PyFR) |
+| `witherden` | 10–20 (without 14) | yes | Witherden (2023), via PyFR | BSD 3-Clause (PyFR) |
