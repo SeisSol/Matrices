@@ -7,6 +7,7 @@ import numpy as np
 
 from quad_rules import Quadrature
 from quad_rules.JaskowiecSukumarSymmetric import JaskowiecSukumarSymmetric
+from quad_rules.ReducedSymmetricTet import ReducedSymmetricTet
 from quad_rules.TabulatedTet import barycentric, is_fully_symmetric
 from quad_rules.WitherdenVincentTet import WitherdenVincentTet
 from quad_rules.WitherdenTet import WitherdenTet
@@ -105,6 +106,20 @@ class test_jaskowiec_sukumar_symmetric(tabulated_tet_tester, unittest.TestCase):
         cls.rule = JaskowiecSukumarSymmetric()
         cls.degrees = list(range(1, 21))
         cls.symmetric = True
+
+
+class test_reduced_symmetric(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = ReducedSymmetricTet()
+        cls.degrees = [12, 14]
+        cls.symmetric = True
+        cls.min_barycentric = 1e-3
+
+    def test_fewer_points(self):
+        others = JaskowiecSukumarSymmetric()
+        for degree, (points, weights) in self.rule.data.items():
+            self.assertLess(points.shape[0], others.data[degree][0].shape[0])
 
 
 if __name__ == "__main__":
