@@ -9,6 +9,7 @@ from quad_rules import Quadrature
 from quad_rules.TabulatedTet import barycentric, is_fully_symmetric
 from quad_rules.WitherdenVincentTet import WitherdenVincentTet
 from quad_rules.WitherdenTet import WitherdenTet
+from quad_rules.XiaoGimbutasTet import XiaoGimbutasTet
 
 UNIT_TETRAHEDRON = np.array(
     [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -88,6 +89,13 @@ class test_witherden(tabulated_tet_tester, unittest.TestCase):
         cls.symmetric = True
         # some rules have points on the boundary
         cls.min_barycentric = -1e-14
+
+
+class test_xiao_gimbutas(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = XiaoGimbutasTet()
+        cls.degrees = list(range(1, 16))
 
 
 if __name__ == "__main__":
