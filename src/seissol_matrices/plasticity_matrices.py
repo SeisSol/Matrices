@@ -2,8 +2,14 @@
 
 import numpy as np
 import os
+import quad_rules.Quadrature
+import quad_rules.SymmetricTet
 from seissol_matrices import basis_functions, dg_matrices, json_io
 from seissol_matrices.plasticity import stroud
+
+UNIT_TETRAHEDRON = np.array(
+    [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+)
 
 
 def parse_nodes(filename):
@@ -18,14 +24,30 @@ class PlasticityGenerator:
         self.dg3_generator = dg_matrices.dg_generator(order, d=3)
         self.order = order
 
+    def quadrature_rule(self, mode):
+        """
+        The points and weights (on the unit tetrahedron) of the quadrature rule
+        a mode projects with:
+        ip: the conical-product (Stroud) rule with order + 1 points per direction
+        sq: the fully symmetric rule with the fewest points that is exact for the
+            product of two basis functions, i.e. up to degree 2 * (order - 1)
+        """
+        assert mode in ["ip", "sq"]
+        if mode == "ip":
+            return stroud.stroud(self.order + 1)
+        points, weights = quad_rules.SymmetricTet.SymmetricTet().find_best_rule(
+            2 * (self.order - 1)
+        )
+        return quad_rules.Quadrature.transform(points, weights, UNIT_TETRAHEDRON)
+
     def nodes(self, mode):
-        assert mode in ["ip", "nb"]
+        assert mode in ["ip", "nb", "sq"]
         if mode == "nb":
             nodes = parse_nodes(
                 f"{os.path.dirname(__file__)}/plasticity/nb_{self.order}.txt"
             )
         else:
-            nodes, _ = stroud.stroud(self.order + 1)
+            nodes, _ = self.quadrature_rule(mode)
 
         return nodes
 
@@ -68,7 +90,7 @@ class PlasticityGenerator:
             vandermonde_inv = np.linalg.solve(vandermonde, np.eye(vandermonde.shape[0]))
         else:
             mass = self.dg3_generator.mass_matrix()
-            nodes, weights = stroud.stroud(self.order + 1)
+            nodes, weights = self.quadrature_rule(mode)
             vandermonde_inv = np.zeros(vandermonde.T.shape)
             for l in range(vandermonde_inv.shape[0]):
                 for i in range(vandermonde_inv.shape[1]):
@@ -78,7 +100,7 @@ class PlasticityGenerator:
 
 
 if __name__ == "__main__":
-    for mode in ["nb", "ip"]:
+    for mode in ["nb", "ip", "sq"]:
         for order in range(2, 9):
             generator = PlasticityGenerator(order)
             nodes = generator.nodes(mode)

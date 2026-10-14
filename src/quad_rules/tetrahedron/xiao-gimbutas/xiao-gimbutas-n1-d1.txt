@@ -1,0 +1,5 @@
+# Xiao-Gimbutas rule for the tetrahedron, degree 1, 1 points
+# source: quadraturerules.org, rules/Q000002/tetrahedron-1.rule (commit 6d86927), CC BY 4.0, Matthew Scroggs & other contributors to quadraturerules.org; see README.md
+# values unchanged
+# columns: l0 l1 l2 l3 weight (barycentric coordinates; the weights sum to 1)
+0.25 0.25 0.25 0.25 1

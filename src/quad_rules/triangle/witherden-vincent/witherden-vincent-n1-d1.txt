@@ -1,0 +1,5 @@
+# Witherden-Vincent rule for the triangle, degree 1, 1 points
+# source: PyFR, pyfr/quadrules/tri/witherden-vincent-n1-d1-sp.txt (commit 7124cb7), BSD 3-Clause License, Copyright (c) 2012-2026 Imperial College London; see README.md
+# converted in decimal arithmetic (80 digits) from the biunit triangle: l1 = (x + 1) / 2, l2 = (y + 1) / 2, l0 = 1 - l1 - l2, weight = w / 2
+# columns: l0 l1 l2 weight (barycentric coordinates; the weights sum to 1)
+0.33333333333333333333333333333333333333 0.333333333333333333333333333333333333335 0.333333333333333333333333333333333333335 1

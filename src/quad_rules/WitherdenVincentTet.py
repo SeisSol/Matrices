@@ -1,13 +1,8 @@
-import numpy as np
-import os
-import pickle
-
-from quad_rules.QuadRule import QuadRule
+from quad_rules.TabulatedTet import TabulatedTet
 
 
-class WitherdenVincentTet(QuadRule):
+class WitherdenVincentTet(TabulatedTet):
+    """Fully symmetric rules of Witherden and Vincent (2015), degrees 1 to 10."""
+
     def __init__(self):
-        directory = os.path.dirname(os.path.abspath(__file__))
-        fn = "WitherdenVincentTet.pkl"
-        with open(os.path.join(directory, fn), "rb") as f:
-            self.data = pickle.load(f)
+        super().__init__("witherden-vincent")

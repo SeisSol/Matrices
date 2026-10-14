@@ -130,12 +130,8 @@ class dr_generator:
 if __name__ == "__main__":
     from seissol_matrices import json_io
 
-    for order in range(1, 8):
-        for quadrule in [
-            quad_points.stroud(order + 1),
-            quad_points.dunavant(order + 1),
-            quad_points.witherden_vincent(order + 1),
-        ]:
+    for order in range(2, 9):
+        for quadrule in quad_points.dr_rules(order).values():
             generator = dr_generator(order, quadrule)
 
             filename = f"dr_{quadrule.name}_matrices_{order}.json"
@@ -146,7 +142,7 @@ if __name__ == "__main__":
             V2mTo2Quad = generator.V2mTo2Quad()
 
             json_io.write_matrix(quadpoints, "quadpoints", filename)
-            json_io.write_matrix(quadweights.reshape(-1, 1), "quadweights", filename)
+            json_io.write_matrix(quadweights, "quadweights", filename)
             json_io.write_matrix(resample, "resample", filename)
             json_io.write_matrix(V2QuadTo2m, "V2QuadTo2m", filename)
             json_io.write_matrix(V2mTo2Quad, "V2mTo2Quad", filename)
