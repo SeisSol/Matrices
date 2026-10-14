@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import os
 import requests
+from math import factorial
 
 from seissol_matrices import plasticity_matrices
 from seissol_matrices import xml_io
@@ -132,6 +133,51 @@ class test_sq(unittest.TestCase):
             identity = vandermonde_inv @ vandermonde
             error = np.abs(identity - np.eye(identity.shape[0])).max()
             self.assertLess(error, 1e-12, f"order {order}")
+
+
+class test_sq3(unittest.TestCase):
+    # number of points of the symmetric rule exact up to degree 3 * (order - 1),
+    # and up to 2 * order + 1 where that is higher
+    points = {1: 8, 2: 14, 3: 35, 4: 59, 5: 124, 6: 213, 7: 352, 8: 540}
+
+    def test(self):
+        for order, count in self.points.items():
+            generator = plasticity_matrices.PlasticityGenerator(order)
+            nodes = generator.nodes("sq3")
+            self.assertEqual(nodes.shape, (count, 3), f"order {order}")
+            barycentric = np.column_stack([1.0 - nodes.sum(axis=1), nodes])
+            self.assertGreater(barycentric.min(), 1e-3, f"order {order}")
+            vandermonde = generator.generate_Vandermonde("sq3")
+            vandermonde_inv = generator.generate_Vandermonde_inv("sq3")
+            identity = vandermonde_inv @ vandermonde
+            error = np.abs(identity - np.eye(identity.shape[0])).max()
+            self.assertLess(error, 1e-12, f"order {order}")
+
+    def test_product_of_three_basis_functions(self):
+        # every monomial up to the degree of such a product integrates exactly;
+        # over the unit tetrahedron, x^a y^b z^c gives a! b! c! / (a + b + c + 3)!
+        for order in self.points:
+            nodes, weights = plasticity_matrices.PlasticityGenerator(
+                order
+            ).quadrature_rule("sq3")
+            degree = max(3 * (order - 1), 2 * order + 1)
+            for a in range(degree + 1):
+                for b in range(degree + 1 - a):
+                    for c in range(degree + 1 - a - b):
+                        exact = (
+                            factorial(a)
+                            * factorial(b)
+                            * factorial(c)
+                            / factorial(a + b + c + 3)
+                        )
+                        value = weights @ (
+                            nodes[:, 0] ** a * nodes[:, 1] ** b * nodes[:, 2] ** c
+                        )
+                        self.assertLess(
+                            abs(value / exact - 1.0),
+                            1e-10,
+                            f"order {order} {a} {b} {c}",
+                        )
 
 
 if __name__ == "__main__":
