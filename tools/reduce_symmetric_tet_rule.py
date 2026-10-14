@@ -522,7 +522,7 @@ def refine(orbits, degree, digits=50, iterations=60):
     return current, error
 
 
-def write_rule(path, orbits, degree, start_path, min_barycentric):
+def write_rule(path, orbits, degree, provenance, min_barycentric):
     one = mpmath.mpf(1)
 
     def number(v):
@@ -538,10 +538,7 @@ def write_rule(path, orbits, degree, start_path, min_barycentric):
             f"{len(lines)} points, positive weights, "
             f"barycentric coordinates > {min_barycentric:g}\n"
         )
-        f.write(
-            f"# obtained with tools/reduce_symmetric_tet_rule.py "
-            f"from {os.path.basename(start_path)}; see README.md\n"
-        )
+        f.write(f"# {provenance}; see README.md\n")
         f.write("# orbits: kind, weight per point, parameters (see the tool)\n")
         for kind, w, p in orbits:
             f.write(
@@ -576,7 +573,14 @@ def main():
         f"{number_of_points(orbits)} points [{describe(orbits)}], "
         f"largest relative moment error {mpmath.nstr(error, 3)}"
     )
-    write_rule(args.output, orbits, args.degree, args.start, args.min_barycentric)
+    write_rule(
+        args.output,
+        orbits,
+        args.degree,
+        f"obtained with tools/reduce_symmetric_tet_rule.py "
+        f"from {os.path.basename(args.start)}",
+        args.min_barycentric,
+    )
 
 
 if __name__ == "__main__":

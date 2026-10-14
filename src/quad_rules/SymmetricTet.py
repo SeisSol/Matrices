@@ -21,7 +21,7 @@ RULES = [
     "witherden-vincent/witherden-vincent-n24-d6.txt",
     "witherden-vincent/witherden-vincent-n35-d7.txt",
     "witherden-vincent/witherden-vincent-n46-d8.txt",
-    "witherden-vincent/witherden-vincent-n81-d10.txt",
+    "orbit-search/orbit-search-n79-d10.txt",
     "jaskowiec-sukumar-symmetric/jaskowiec-sukumar-n110-d11.txt",
     "reduced-symmetric/reduced-symmetric-n128-d12.txt",
     "witherden/witherden-n145-d13.txt",

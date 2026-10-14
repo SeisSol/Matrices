@@ -7,6 +7,7 @@ import numpy as np
 
 from quad_rules import Quadrature
 from quad_rules.JaskowiecSukumarSymmetric import JaskowiecSukumarSymmetric
+from quad_rules.OrbitSearchTet import OrbitSearchTet
 from quad_rules.ReducedSymmetricTet import ReducedSymmetricTet
 from quad_rules.SymmetricTet import MIN_BARYCENTRIC, SymmetricTet, orbit_barycentric
 from quad_rules.TabulatedTet import barycentric, is_fully_symmetric, read_rule
@@ -123,6 +124,20 @@ class test_reduced_symmetric(tabulated_tet_tester, unittest.TestCase):
             self.assertLess(points.shape[0], others.data[degree][0].shape[0])
 
 
+class test_orbit_search(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = OrbitSearchTet()
+        cls.degrees = [10]
+        cls.symmetric = True
+        cls.min_barycentric = 1e-3
+
+    def test_fewer_points(self):
+        others = WitherdenVincentTet()
+        for degree, (points, weights) in self.rule.data.items():
+            self.assertLess(points.shape[0], others.data[degree][0].shape[0])
+
+
 class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -159,6 +174,7 @@ class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
             XiaoGimbutasTet(),
             JaskowiecSukumarSymmetric(),
             ReducedSymmetricTet(),
+            OrbitSearchTet(),
         ]
         admissible = []
         for family in families:
