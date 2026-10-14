@@ -28,20 +28,26 @@ class PlasticityGenerator:
         """
         The points and weights (on the unit tetrahedron) of the quadrature rule
         a mode projects with:
-        ip: the conical-product (Stroud) rule with order + 1 points per direction
-        sq: the fully symmetric rule with the fewest points that is exact for the
-            product of two basis functions, i.e. up to degree 2 * (order - 1)
+        ip:  the conical-product (Stroud) rule with order + 1 points per direction
+        sq:  the fully symmetric rule with the fewest points that is exact for the
+             product of two basis functions, i.e. up to degree 2 * (order - 1)
+        sq3: the same for the product of three basis functions, i.e. up to degree
+             3 * (order - 1), so that the projection of a source quadratic in the
+             state is exact, and at least up to the degree of ip, 2 * order + 1,
+             which is the higher one below order 4
         """
-        assert mode in ["ip", "sq"]
+        assert mode in ["ip", "sq", "sq3"]
         if mode == "ip":
             return stroud.stroud(self.order + 1)
-        points, weights = quad_rules.SymmetricTet.SymmetricTet().find_best_rule(
-            2 * (self.order - 1)
-        )
+        if mode == "sq":
+            degree = 2 * (self.order - 1)
+        else:
+            degree = max(3 * (self.order - 1), 2 * self.order + 1)
+        points, weights = quad_rules.SymmetricTet.SymmetricTet().find_best_rule(degree)
         return quad_rules.Quadrature.transform(points, weights, UNIT_TETRAHEDRON)
 
     def nodes(self, mode):
-        assert mode in ["ip", "nb", "sq"]
+        assert mode in ["ip", "nb", "sq", "sq3"]
         if mode == "nb":
             nodes = parse_nodes(
                 f"{os.path.dirname(__file__)}/plasticity/nb_{self.order}.txt"
@@ -100,7 +106,7 @@ class PlasticityGenerator:
 
 
 if __name__ == "__main__":
-    for mode in ["nb", "ip", "sq"]:
+    for mode in ["nb", "ip", "sq", "sq3"]:
         for order in range(2, 9):
             generator = PlasticityGenerator(order)
             nodes = generator.nodes(mode)
