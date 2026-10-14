@@ -6,7 +6,8 @@ import unittest
 import numpy as np
 
 from quad_rules import Quadrature
-from quad_rules.TabulatedTri import barycentric, is_fully_symmetric
+from quad_rules.SymmetricTri import MIN_BARYCENTRIC, SymmetricTri, orbit_barycentric
+from quad_rules.TabulatedTri import barycentric, is_fully_symmetric, read_rule
 from quad_rules.WitherdenVincentTri import WitherdenVincentTri
 from quad_rules.XiaoGimbutasTri import XiaoGimbutasTri
 
@@ -80,6 +81,90 @@ class test_xiao_gimbutas(tabulated_tri_tester, unittest.TestCase):
         cls.rule = XiaoGimbutasTri()
         cls.degrees = list(range(1, 31))
         cls.symmetric = True
+
+
+class test_symmetric_selection(tabulated_tri_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = SymmetricTri()
+        cls.degrees = [1, 2] + list(range(4, 21))
+        cls.symmetric = True
+        cls.min_barycentric = MIN_BARYCENTRIC
+
+    def test_same_rules_as_files(self):
+        # reordered by orbits, the rules hold the points and weights of their files
+        for degree, path in self.rule.files.items():
+            points, weights = read_rule(path)
+            ordered, ordered_weights = self.rule.data[degree]
+            distance = np.linalg.norm(points[:, None, :] - ordered[None, :, :], axis=2)
+            partner = np.argmin(distance, axis=1)
+            self.assertLess(
+                distance[np.arange(len(points)), partner].max(),
+                1e-13,
+                f"degree {degree}",
+            )
+            self.assertEqual(
+                sorted(partner), list(range(len(points))), f"degree {degree}"
+            )
+            self.assertLess(
+                np.abs(weights - ordered_weights[partner]).max(),
+                1e-14,
+                f"degree {degree}",
+            )
+
+    def test_fewest_points(self):
+        # the fewest points, and of those (up to 1e-6) the largest smallest
+        # barycentric coordinate
+        admissible = []
+        for family in [WitherdenVincentTri(), XiaoGimbutasTri()]:
+            for degree, (points, weights) in family.data.items():
+                smallest = barycentric(points).min()
+                if (
+                    weights.min() > 0
+                    and smallest > MIN_BARYCENTRIC
+                    and is_fully_symmetric(points, weights)
+                ):
+                    admissible.append((degree, points.shape[0], smallest))
+        for degree in range(21):
+            fewest = min(n for d, n, _ in admissible if d >= degree)
+            inside = max(b for d, n, b in admissible if d >= degree and n == fewest)
+            points, _ = self.rule.find_best_rule(degree)
+            self.assertEqual(points.shape[0], fewest, f"degree {degree}")
+            self.assertGreater(
+                barycentric(points).min(), inside - 1e-6, f"degree {degree}"
+            )
+
+    def test_orbit_order(self):
+        np.testing.assert_allclose(
+            orbit_barycentric("S3", [0.1]),
+            [[0.1, 0.1, 0.8], [0.1, 0.8, 0.1], [0.8, 0.1, 0.1]],
+            atol=1e-15,
+        )
+        np.testing.assert_allclose(
+            orbit_barycentric("S6", [0.1, 0.2]),
+            [
+                [0.1, 0.2, 0.7],
+                [0.1, 0.7, 0.2],
+                [0.2, 0.1, 0.7],
+                [0.2, 0.7, 0.1],
+                [0.7, 0.1, 0.2],
+                [0.7, 0.2, 0.1],
+            ],
+            atol=1e-15,
+        )
+
+    def test_vertex_permutations_permute_points(self):
+        # the point sets of the two cells sharing a face coincide
+        for degree, (points, weights) in self.rule.data.items():
+            lam = barycentric(points)
+            for permutation in [(1, 0, 2), (0, 2, 1), (2, 1, 0), (1, 2, 0)]:
+                moved = lam[:, list(permutation)]
+                distance = np.linalg.norm(moved[:, None, :] - lam[None, :, :], axis=2)
+                partner = np.argmin(distance, axis=1)
+                self.assertLess(distance.min(axis=1).max(), 1e-14, f"degree {degree}")
+                self.assertEqual(
+                    sorted(partner), list(range(len(lam))), f"degree {degree}"
+                )
 
 
 if __name__ == "__main__":

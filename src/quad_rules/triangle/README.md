@@ -25,3 +25,20 @@ The values are converted in decimal arithmetic and rounded to double once.
 All rules have positive weights.
 All points lie inside the triangle, except for three points of the Witherden–Vincent rule of degree 16,
 which lie on its edges.
+
+## Selection of symmetric rules
+
+`quad_rules.SymmetricTri` picks, for each degree, the rule with the fewest points among the families above
+that is invariant under all permutations of the vertices, has positive weights and keeps all barycentric
+coordinates above 1e-3, and of those the one whose smallest barycentric coordinate is largest
+(the table `RULES` there; `tests/test_tri_rules.py` checks the choice).
+It returns the points ordered by orbits of the vertex permutations.
+Since every permutation of the vertices maps such a rule onto itself, the two cells that share a face
+see the same points of it, only numbered differently.
+
+Up to degree 14, no fully symmetric rule with positive weights and interior points has fewer points than these:
+S.-A. Papanicolopulos, Computation of moderate-degree fully-symmetric cubature rules on the triangle using
+symmetric polynomials and algebraic solving, Computers & Mathematics with Applications 69, 650–666, 2015
+(preprint: https://arxiv.org/abs/1111.3827), computes all rules with the fewest points these degrees allow.
+Where those are fewer than here, none of them is of that quality; degree 10, for one, has rules with 24 points,
+all of which have points outside the triangle or complex coordinates.
