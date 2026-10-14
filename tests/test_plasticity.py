@@ -114,5 +114,25 @@ class test_ip_7(abstract_tester, helper.helper):
         setUpClassFromOrder(cls, "ip", 7)
 
 
+class test_sq(unittest.TestCase):
+    # number of points of the symmetric rule exact up to degree 2 * (order - 1)
+    points = {1: 1, 2: 4, 3: 14, 4: 24, 5: 46, 6: 81, 7: 128, 8: 188}
+
+    def test(self):
+        for order, count in self.points.items():
+            generator = plasticity_matrices.PlasticityGenerator(order)
+            nodes = generator.nodes("sq")
+            self.assertEqual(nodes.shape, (count, 3), f"order {order}")
+            # all points inside the cell
+            barycentric = np.column_stack([1.0 - nodes.sum(axis=1), nodes])
+            self.assertGreater(barycentric.min(), 1e-3, f"order {order}")
+            # converting to the nodes and back reproduces every basis function
+            vandermonde = generator.generate_Vandermonde("sq")
+            vandermonde_inv = generator.generate_Vandermonde_inv("sq")
+            identity = vandermonde_inv @ vandermonde
+            error = np.abs(identity - np.eye(identity.shape[0])).max()
+            self.assertLess(error, 1e-12, f"order {order}")
+
+
 if __name__ == "__main__":
     unittest.main()
