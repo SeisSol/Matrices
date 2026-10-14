@@ -1,0 +1,7 @@
+# Xiao-Gimbutas rule for the triangle, degree 2, 3 points
+# source: quadraturerules.org, rules/Q000002/triangle-2.rule (commit 6d86927), CC BY 4.0, Matthew Scroggs & other contributors to quadraturerules.org; see README.md
+# values unchanged
+# columns: l0 l1 l2 weight (barycentric coordinates; the weights sum to 1)
+0.6666666666666667 0.16666666666666666 0.16666666666666666 0.3333333333333333
+0.16666666666666663 0.16666666666666666 0.6666666666666667 0.3333333333333333
+0.16666666666666663 0.6666666666666667 0.16666666666666666 0.3333333333333333

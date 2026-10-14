@@ -4,7 +4,8 @@
 * The reference element in 2D is the triangle spanned by the nodes (-1, -1), (1, -1), (-1, 1).
 * The reference element in 3D is the tetrahedron spanned by the nodes (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1).
 
-Tetrahedral rules can also be read from text files, see [tetrahedron/README.md](tetrahedron/README.md).
+Tetrahedral and triangular rules can also be read from text files, see [tetrahedron/README.md](tetrahedron/README.md)
+and [triangle/README.md](triangle/README.md).
 
 Use as
 ```
