@@ -129,14 +129,39 @@ class test_orbit_search(tabulated_tet_tester, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.rule = OrbitSearchTet()
-        cls.degrees = [10]
+        cls.degrees = [9, 10]
         cls.symmetric = True
         cls.min_barycentric = 1e-3
 
     def test_fewer_points(self):
-        others = WitherdenVincentTet()
+        # every other fully symmetric rule of the degree with positive weights and
+        # points inside has more points, or as many and a point nearer to the boundary
+        families = [
+            WitherdenVincentTet(),
+            WitherdenTet(),
+            JaskowiecSukumarSymmetric(),
+            ReducedSymmetricTet(),
+            WorkuHickenZinggTet(),
+        ]
         for degree, (points, weights) in self.rule.data.items():
-            self.assertLess(points.shape[0], others.data[degree][0].shape[0])
+            for family in families:
+                if degree not in family.data:
+                    continue
+                other, other_weights = family.data[degree]
+                if (
+                    other_weights.min() > 0
+                    and barycentric(other).min() > MIN_BARYCENTRIC
+                    and is_fully_symmetric(other, other_weights)
+                ):
+                    self.assertLessEqual(
+                        points.shape[0], other.shape[0], f"degree {degree}"
+                    )
+                    if points.shape[0] == other.shape[0]:
+                        self.assertGreater(
+                            barycentric(points).min(),
+                            barycentric(other).min(),
+                            f"degree {degree}",
+                        )
 
 
 class test_worku_hicken_zingg(tabulated_tet_tester, unittest.TestCase):
@@ -151,7 +176,7 @@ class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.rule = SymmetricTet()
-        cls.degrees = [1, 2, 3, 5, 6, 7, 8] + list(range(10, 22))
+        cls.degrees = [1, 2, 3, 5, 6, 7, 8] + list(range(9, 22))
         cls.symmetric = True
         cls.min_barycentric = MIN_BARYCENTRIC
 

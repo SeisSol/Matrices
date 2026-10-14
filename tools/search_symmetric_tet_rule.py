@@ -11,16 +11,20 @@ leave the admissible set (positive weights, all barycentric coordinates at least
 degree that are invariant under the vertex permutations, as polynomials in the
 elementary symmetric functions e2, e3, e4 of the barycentric coordinates.
 
-A structure with more unknowns than equations has families of solutions. Along the family
-of the solution found, the tool moves by pseudo-arclength continuation to the member
-whose smallest barycentric coordinate is largest. The result is refined to 40 digits with
-mpmath and written in the text format of src/quad_rules/tetrahedron, with the orbits
+A structure with more unknowns than equations has families of solutions. Along a family
+of one parameter, the tool moves by pseudo-arclength continuation to the member whose
+smallest barycentric coordinate is largest; within a family of more parameters it climbs
+there by steps in the tangent space of the family. The result is refined to 40 digits
+with mpmath and written in the text format of src/quad_rules/tetrahedron, with the orbits
 listed in the header.
 
-Example (the rule of degree 10 with 79 points, about ten minutes):
+Examples (the rule of degree 10 with 79 points, about ten minutes; the rule of degree 9
+with 59 points, about five):
 
   python tools/search_symmetric_tet_rule.py --degree 10 \\
     --structure S1:1,S4:3,S6:1,S12:5 orbit-search-n79-d10.txt
+  python tools/search_symmetric_tet_rule.py --degree 9 \\
+    --structure S1:1,S4:4,S6:1,S12:3 orbit-search-n59-d9.txt
 """
 
 import argparse
@@ -314,6 +318,68 @@ def follow_family(equations, structure, x, step=5e-4, steps=4000):
     return best[1]
 
 
+def barycentric_gradients(structure, x):
+    """
+    The barycentric coordinates of the first point of every orbit with parameters, and
+    their gradients by the unknowns.
+    """
+    _, P = structure.split(x[None, :])
+    values, gradients = [], []
+    for o, kind in enumerate(structure.kinds):
+        if kind == "S1":
+            continue
+        lam, dlam = base_point(kind, P[o])
+        off, n = structure.offsets[o], structure.parameters[o]
+        for c in range(4):
+            gradient = np.zeros(structure.unknowns)
+            gradient[off : off + n] = dlam[0, :, c]
+            values.append(lam[0, c])
+            gradients.append(gradient)
+    return np.array(values), np.array(gradients)
+
+
+def climb_family(equations, structure, x, step=1e-2, smallest_step=1e-10):
+    """
+    For a family of solutions of more than one parameter: climb towards the member
+    whose smallest barycentric coordinate is largest. Each step goes along the direction
+    in the tangent space of the family that raises the smallest of the coordinates within
+    reach most, returns to the family by minimum-norm Newton steps, and is halved
+    whenever that leaves the family or does not raise the smallest coordinate.
+    """
+
+    def correct(x):
+        for _ in range(40):
+            R, J, _ = evaluate(equations, structure, x[None, :], 0.0)
+            dx = -np.linalg.pinv(J[0]) @ R[0]
+            x = x + dx
+            if np.linalg.norm(dx) < 1e-15:
+                break
+        R, _, ok = evaluate(equations, structure, x[None, :], 0.0, jacobian=False)
+        return x, float(np.linalg.norm(R)), bool(ok[0])
+
+    rng = np.random.default_rng(0)
+    best = smallest_barycentric(structure.to_orbits(x))
+    while step > smallest_step:
+        _, J, _ = evaluate(equations, structure, x[None, :], 0.0)
+        _, s, vt = np.linalg.svd(J[0])
+        tangent = vt[int((s > s[0] * 1e-10).sum()) :].T
+        values, gradients = barycentric_gradients(structure, x)
+        near = values < values.min() + step
+        directions = rng.standard_normal((720, tangent.shape[1]))
+        directions /= np.linalg.norm(directions, axis=1)[:, None]
+        reached = (
+            values[near][None, :] + step * directions @ (gradients[near] @ tangent).T
+        )
+        direction = directions[np.argmax(reached.min(axis=1))]
+        candidate, residual, ok = correct(x + step * tangent @ direction)
+        smallest = smallest_barycentric(structure.to_orbits(candidate))
+        if ok and residual < 1e-11 and smallest > best:
+            x, best = candidate, smallest
+        else:
+            step /= 2
+    return x
+
+
 def search(degree, counts, starts, seed, min_barycentric, batch=500):
     equations = InvariantEquations(degree)
     structure = Structure(counts)
@@ -349,8 +415,11 @@ def search(degree, counts, starts, seed, min_barycentric, batch=500):
     if not found:
         raise ValueError("no solution found; try more starts or another seed")
     x = max(found, key=lambda x: smallest_barycentric(structure.to_orbits(x)))
-    if structure.unknowns > equations.count:
+    spare = structure.unknowns - equations.count
+    if spare == 1:
         x = follow_family(equations, structure, x)
+    elif spare > 1:
+        x = climb_family(equations, structure, x)
     return structure.to_orbits(x)
 
 

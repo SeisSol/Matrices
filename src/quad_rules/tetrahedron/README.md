@@ -23,7 +23,7 @@ on the reference tetrahedron (-1, -1, -1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)
 | `xiao-gimbutas` | 1–15 | no | Xiao, Gimbutas (2010), via quadraturerules.org | CC BY 4.0 |
 | `jaskowiec-sukumar-symmetric` | 1–20 | yes | Jaśkowiec, Sukumar (2021), via modepy | CC BY 4.0 |
 | `reduced-symmetric` | 12, 14 | yes | computed for SeisSol from the Jaśkowiec–Sukumar rules | CC BY 4.0 (adapted) |
-| `orbit-search` | 10 | yes | computed for SeisSol by a search over orbit structures | BSD 3-Clause (this repository) |
+| `orbit-search` | 9, 10 | yes | computed for SeisSol by a search over orbit structures | BSD 3-Clause (this repository) |
 | `worku-hicken-zingg` | 1–21 | yes | Worku, Hicken, Zingg (2024), via SummationByParts.jl | MIT |
 
 ## Selection of symmetric rules

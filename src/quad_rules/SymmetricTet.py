@@ -21,6 +21,7 @@ RULES = [
     "witherden-vincent/witherden-vincent-n24-d6.txt",
     "witherden-vincent/witherden-vincent-n35-d7.txt",
     "witherden-vincent/witherden-vincent-n46-d8.txt",
+    "orbit-search/orbit-search-n59-d9.txt",
     "orbit-search/orbit-search-n79-d10.txt",
     "worku-hicken-zingg/worku-hicken-zingg-n100-d11.txt",
     "worku-hicken-zingg/worku-hicken-zingg-n124-d12.txt",
