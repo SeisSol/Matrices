@@ -22,16 +22,17 @@ RULES = [
     "witherden-vincent/witherden-vincent-n35-d7.txt",
     "witherden-vincent/witherden-vincent-n46-d8.txt",
     "orbit-search/orbit-search-n79-d10.txt",
-    "jaskowiec-sukumar-symmetric/jaskowiec-sukumar-n110-d11.txt",
-    "reduced-symmetric/reduced-symmetric-n128-d12.txt",
+    "worku-hicken-zingg/worku-hicken-zingg-n100-d11.txt",
+    "worku-hicken-zingg/worku-hicken-zingg-n124-d12.txt",
     "witherden/witherden-n145-d13.txt",
-    "reduced-symmetric/reduced-symmetric-n188-d14.txt",
+    "worku-hicken-zingg/worku-hicken-zingg-n181-d14.txt",
     "witherden/witherden-n213-d15.txt",
     "witherden/witherden-n251-d16.txt",
     "witherden/witherden-n290-d17.txt",
     "witherden/witherden-n352-d18.txt",
-    "jaskowiec-sukumar-symmetric/jaskowiec-sukumar-n487-d19.txt",
-    "jaskowiec-sukumar-symmetric/jaskowiec-sukumar-n552-d20.txt",
+    "worku-hicken-zingg/worku-hicken-zingg-n408-d19.txt",
+    "worku-hicken-zingg/worku-hicken-zingg-n469-d20.txt",
+    "worku-hicken-zingg/worku-hicken-zingg-n540-d21.txt",
 ]
 
 # Orbits under the permutations of the vertices, as patterns of barycentric coordinates.

@@ -1,11 +1,11 @@
 # Symmetric rules for the tetrahedron found by a search over orbit structures
 
-Fully symmetric rules with positive weights and all barycentric coordinates above 1e-3,
-with fewer points than the other rules of this kind and degree in `quad_rules`:
+Fully symmetric rules with positive weights and all barycentric coordinates above 1e-3, with no more points
+than the other rules of this kind and degree in `quad_rules` and further inside than those with as many:
 
 | Degree | Points | Orbits | Smallest barycentric coordinate | Other fully symmetric rules with positive weights |
 | ------ | ------ | ------ | ------------------------------- | ------------------------------------------------- |
-| 10 | 79 | S1x1 S4x3 S6x1 S12x5 | 1.06e-2 | Witherden–Vincent: 81 points (smallest barycentric coordinate 6.1e-3) |
+| 10 | 79 | S1x1 S4x3 S6x1 S12x5 | 1.06e-2 | Witherden–Vincent: 81 points (smallest barycentric coordinate 6.1e-3); Worku–Hicken–Zingg: 79 points (3.6e-3) |
 
 They were computed for SeisSol with `tools/search_symmetric_tet_rule.py`: for a given number of orbits of
 each kind, it solves the moment equations from many random starts, keeping the weights positive and the

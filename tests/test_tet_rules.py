@@ -13,6 +13,7 @@ from quad_rules.SymmetricTet import MIN_BARYCENTRIC, SymmetricTet, orbit_barycen
 from quad_rules.TabulatedTet import barycentric, is_fully_symmetric, read_rule
 from quad_rules.WitherdenVincentTet import WitherdenVincentTet
 from quad_rules.WitherdenTet import WitherdenTet
+from quad_rules.WorkuHickenZinggTet import WorkuHickenZinggTet
 from quad_rules.XiaoGimbutasTet import XiaoGimbutasTet
 
 UNIT_TETRAHEDRON = np.array(
@@ -138,11 +139,19 @@ class test_orbit_search(tabulated_tet_tester, unittest.TestCase):
             self.assertLess(points.shape[0], others.data[degree][0].shape[0])
 
 
+class test_worku_hicken_zingg(tabulated_tet_tester, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.rule = WorkuHickenZinggTet()
+        cls.degrees = list(range(1, 22))
+        cls.symmetric = True
+
+
 class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.rule = SymmetricTet()
-        cls.degrees = [1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        cls.degrees = [1, 2, 3, 5, 6, 7, 8] + list(range(10, 22))
         cls.symmetric = True
         cls.min_barycentric = MIN_BARYCENTRIC
 
@@ -175,6 +184,7 @@ class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
             JaskowiecSukumarSymmetric(),
             ReducedSymmetricTet(),
             OrbitSearchTet(),
+            WorkuHickenZinggTet(),
         ]
         admissible = []
         for family in families:
@@ -185,7 +195,7 @@ class test_symmetric_selection(tabulated_tet_tester, unittest.TestCase):
                     and is_fully_symmetric(points, weights)
                 ):
                     admissible.append((degree, points.shape[0]))
-        for degree in range(21):
+        for degree in range(22):
             fewest = min(n for d, n in admissible if d >= degree)
             points, _ = self.rule.find_best_rule(degree)
             self.assertEqual(points.shape[0], fewest, f"degree {degree}")

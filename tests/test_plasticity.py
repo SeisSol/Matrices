@@ -116,7 +116,7 @@ class test_ip_7(abstract_tester, helper.helper):
 
 class test_sq(unittest.TestCase):
     # number of points of the symmetric rule exact up to degree 2 * (order - 1)
-    points = {1: 1, 2: 4, 3: 14, 4: 24, 5: 46, 6: 79, 7: 128, 8: 188}
+    points = {1: 1, 2: 4, 3: 14, 4: 24, 5: 46, 6: 79, 7: 124, 8: 181}
 
     def test(self):
         for order, count in self.points.items():
