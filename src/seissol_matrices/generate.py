@@ -69,14 +69,7 @@ def main():
         if len(sys.argv) > 2:
             materialorder = int(sys.argv[2])
         for order in range(2, 9):
-            for quadname, quadrule in zip(
-                ["stroud", "dunavant", "witherden_vincent"],
-                [
-                    quad_points.stroud(order + 1),
-                    quad_points.dunavant(order + 1),
-                    quad_points.witherden_vincent(order + 1),
-                ],
-            ):
+            for quadname, quadrule in quad_points.dr_rules(order).items():
                 filename = f"dr-{quadname}-{order}-h{materialorder}.json"
                 if materialorder is None:
                     filename = f"dr-{quadname}-{order}.json"
@@ -89,9 +82,7 @@ def main():
                 V2mTo2Quad = generator.V2mTo2Quad()
 
                 json_io.write_tensor(quadpoints, "quadpoints", filename)
-                json_io.write_tensor(
-                    quadweights.reshape(-1, 1), "quadweights", filename
-                )
+                json_io.write_tensor(quadweights, "quadweights", filename)
                 json_io.write_tensor(resample, "resample", filename)
                 json_io.write_tensor(V2QuadTo2m, "V2QuadTo2m", filename)
                 json_io.write_tensor(V2mTo2Quad, "V2mTo2Quad", filename)
@@ -120,14 +111,7 @@ def main():
             json_io.write_tensor(interpolator, "homproject", filename)
             json_io.write_tensor(deinterpolator, "homiproject", filename)
             for order in range(2, 9):
-                for quadname, quadrule in zip(
-                    ["stroud", "dunavant", "witherden_vincent"],
-                    [
-                        quad_points.stroud(order + 1),
-                        quad_points.dunavant(order + 1),
-                        quad_points.witherden_vincent(order + 1),
-                    ],
-                ):
+                for quadname, quadrule in quad_points.dr_rules(order).items():
                     filename = f"homdr-{mode}-{quadname}-{order}-h{materialorder}.json"
                     generator = dr_generator(materialorder, quadrule)
                     for a in range(0, 4):

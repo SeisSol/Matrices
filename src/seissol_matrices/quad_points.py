@@ -4,6 +4,7 @@ import quad_rules.Quadrature
 import quad_rules.GaussJacobi
 import quad_rules.Dunavant
 import quad_rules.WitherdenVincentTri
+import quad_rules.SymmetricTri
 
 
 class quadrature(ABC):
@@ -48,49 +49,79 @@ class stroud(quadrature):
         return weights
 
 
-class dunavant(quadrature):
-    def __init__(self, n):
-        self.n = n
-        self.name = "dunavant"
+def interior_rule(family, degree):
+    """
+    The rule of a family with the fewest points that is exact up to at least the
+    given degree, has positive weights and all points inside the triangle.
+
+    A rule with a point outside or on the boundary of a face would sample a fault
+    there, or beyond it.
+    """
+    candidates = []
+    for d, (nodes, weights) in family.data.items():
+        unit = 0.5 * (nodes + 1.0)
+        smallest = min(unit.min(), (1.0 - unit.sum(axis=1)).min())
+        if d >= degree and weights.min() > 0 and smallest > 0:
+            candidates.append((len(weights), d))
+    if not candidates:
+        raise ValueError(f"no interior rule with positive weights of degree {degree}")
+    _, best = min(candidates)
+    return family.data[best]
+
+
+class triangle_family_rule(quadrature):
+    """
+    A rule of a family of triangular rules, exact up to at least the given degree,
+    with positive weights and all points inside, on the unit triangle.
+    """
+
+    def __init__(self, degree, family, name):
+        self.n = degree
+        self.name = name
+        nodes, weights = interior_rule(family, degree)
+        self.nodes, self.weights_ = quad_rules.Quadrature.transform(
+            nodes, weights, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        )
 
     def points(self):
-        n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
-        n_, w_ = quad_rules.Quadrature.transform(
-            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-        )
-        return n_
+        return self.nodes
 
     def weights(self):
-        n, w = quad_rules.Dunavant.Dunavant().find_best_rule(self.n)
-        n_, w_ = quad_rules.Quadrature.transform(
-            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-        )
-        return w_
+        return self.weights_
 
 
-class witherden_vincent(quadrature):
-    def __init__(self, n):
-        # Witherden Vincent Quadratur rule of order 4 does not exist
-        self.n = n if n != 3 else 4
-        self.name = "witherden_vincent"
+class dunavant(triangle_family_rule):
+    def __init__(self, degree):
+        super().__init__(degree, quad_rules.Dunavant.Dunavant(), "dunavant")
 
-    def points(self):
-        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
-            self.n
-        )
-        n_, w_ = quad_rules.Quadrature.transform(
-            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-        )
-        return n_
 
-    def weights(self):
-        n, w = quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule(
-            self.n
+class witherden_vincent(triangle_family_rule):
+    def __init__(self, degree):
+        super().__init__(
+            degree,
+            quad_rules.WitherdenVincentTri.WitherdenVincentTri(),
+            "witherden_vincent",
         )
-        n_, w_ = quad_rules.Quadrature.transform(
-            n, w, np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
-        )
-        return w_
+
+
+class symmetric(triangle_family_rule):
+    def __init__(self, degree):
+        super().__init__(degree, quad_rules.SymmetricTri.SymmetricTri(), "symmetric")
+
+
+def dr_rules(order):
+    """
+    The rules a fault face is sampled with, by name, for a scheme of the given
+    order (whose basis has the degree order - 1): Stroud's conical product with
+    order + 1 points per direction, exact up to degree 2 * order + 1, and the
+    Dunavant and Witherden-Vincent rules exact up to degree 2 * order, two
+    degrees more than the mass matrix of a face needs.
+    """
+    return {
+        "stroud": stroud(order + 1),
+        "dunavant": dunavant(2 * order),
+        "witherden_vincent": witherden_vincent(2 * order),
+    }
 
 
 if __name__ == "__main__":
