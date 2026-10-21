@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import quad_rules.WitherdenVincentTri
 import quad_rules.WitherdenVincentTet
@@ -84,6 +86,35 @@ def face_vertices(face):
 def opposite_vertex(face):
     """The vertex of the tetrahedron not on a face."""
     return ({0, 1, 2, 3} - set(face_vertices(face))).pop()
+
+
+#: The orientations a face can have against its canonical frame, see
+#: canonical_to_face_parametrisation.
+FACE_ORIENTATIONS = tuple(itertools.permutations(range(3)))
+
+
+def canonical_to_face_parametrisation(x, ranks):
+    """
+    A point x (2 x points) of a face in its canonical frame, in the coordinates of
+    the face as a cell parametrises it (volume_to_face_parametrisation).
+
+    The canonical frame of a face places the vertex with the smallest global ID at
+    (0, 0), the next one at (1, 0) and the largest at (0, 1), so that both cells of
+    the face see it alike. `ranks` is the orientation of the cell's face against
+    it (one of FACE_ORIENTATIONS): the rank, among the three vertices of the face
+    ordered by global ID, of the vertex the cell has at (0, 0), (1, 0), (0, 1).
+    """
+    canonical = [1.0 - x[0] - x[1], x[0], x[1]]
+    local = [canonical[rank] for rank in ranks]
+    return np.stack([local[1], local[2]])
+
+
+def sorted_vertex_ranks(face):
+    """The orientation of a face of a cell whose local vertices are ordered by
+    their global IDs."""
+    vertices = face_vertices(face)
+    ordered = sorted(vertices)
+    return tuple(ordered.index(vertex) for vertex in vertices)
 
 
 ### Generates matrices which are of general interest for DG methods:
@@ -271,6 +302,27 @@ class dg_generator:
         matrix = self.volume_times_face_mass_matrix(side)
         mass = self.face_generator.mass_matrix()
         return np.linalg.solve(mass, matrix)
+
+    def canonical_rT(self, face, ranks):
+        """
+        The trace on a face in the face basis of its canonical frame: the same
+        coefficients from both cells of the face, whatever their numbering
+        (see canonical_to_face_parametrisation). A cell whose face has the
+        orientation `ranks` reads its trace there with this matrix.
+        """
+        assert self.dim == 3
+        nodes, weights = self.face_generator.get_quadrature_rule(2 * self.order)
+        x = nodes.T
+        local = canonical_to_face_parametrisation(x, ranks)
+        volume = self.generator.eval_all(volume_to_face_parametrisation(local, face))
+        face_values = self.face_generator.generator.eval_all(x)
+        moments = (face_values * weights[:, None]).T @ volume
+        return np.linalg.solve(self.face_generator.mass_matrix(), moments)
+
+    def canonical_rDivM(self, face, ranks):
+        """M^-1 canonical_rT^T, which takes what a flux gives in the canonical frame
+        of a face back into the cell, as rDivM does from the cell's own frame."""
+        return np.linalg.solve(self.mass_matrix(), self.canonical_rT(face, ranks).T)
 
     def rDivM(self, side, matorder=None):
         assert self.dim == 3

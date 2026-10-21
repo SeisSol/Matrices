@@ -19,6 +19,7 @@ class FaceQuadratureGenerator:
     """
 
     def __init__(self, order, family="dubiner"):
+        self.family = family
         self.bf2_generator = basis_functions.generator(family, 2, order)
         self.dg3_generator = dg_matrices.dg_generator(order, d=3, family=family)
 
@@ -28,9 +29,14 @@ class FaceQuadratureGenerator:
         self.vandermonde = self.generate_V2mToFaceQuad()
         self.rTs = [self.dg3_generator.rT(faceid) for faceid in range(4)]
 
-    def generate_V2mToFaceQuad(self):
-        """The face basis functions at the points, shape (points, face basis functions)."""
-        return self.bf2_generator.eval_all(self.points.T)
+    def generate_V2mToFaceQuad(self, degree=None):
+        """The face basis functions at the points, shape (points, face basis
+        functions): of the scheme, or of `degree` for the trace of a time derivative
+        in a basis that is not hierarchical."""
+        basis = self.bf2_generator
+        if degree is not None:
+            basis = basis_functions.generator(self.family, 2, degree + 1)
+        return basis.eval_all(self.points.T)
 
     def generate_VFaceQuadTo2m(self):
         """

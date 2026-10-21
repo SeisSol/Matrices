@@ -101,29 +101,36 @@ def elevation(degree, dim):
     )
 
 
-def _volume_index(face, face_index, degree, level=0):
-    """The full volume multi-index of the face multi-index (b_1, b_2) of degree
-    `degree`, with `level` at the opposite vertex."""
+def _volume_index(face, face_index, degree, level=0, ranks=(0, 1, 2)):
+    """
+    The full volume multi-index of the face multi-index (b_1, b_2) of degree
+    `degree`, with `level` at the opposite vertex. The face index is in the frame
+    in which the cell's face has the orientation `ranks`
+    (dg_matrices.canonical_to_face_parametrisation); (0, 1, 2) is the frame of the
+    cell's own parametrisation.
+    """
     b = _full(face_index, degree)
     a = [0, 0, 0, 0]
     for slot, vertex in enumerate(dg_matrices.face_vertices(face)):
-        a[vertex] = b[slot]
+        a[vertex] = b[ranks[slot]]
     a[dg_matrices.opposite_vertex(face)] = level
     return tuple(a)
 
 
-def trace_indices(degree, face):
-    """For every face coefficient (in face order), the volume coefficient it is."""
+def trace_indices(degree, face, ranks=(0, 1, 2)):
+    """For every face coefficient (in face order), the volume coefficient it is:
+    in the cell's parametrisation of the face, or in its canonical frame for the
+    orientation `ranks`."""
     volume = _positions(degree, 3)
     return [
-        volume[_volume_index(face, b, degree)[1:]]
+        volume[_volume_index(face, b, degree, 0, ranks)[1:]]
         for b in basis_functions.bernstein_indices(degree, 2)
     ]
 
 
-def trace(degree, face):
+def trace(degree, face, ranks=(0, 1, 2)):
     """The trace on a face as a matrix of zeros and ones, one per row."""
-    indices = trace_indices(degree, face)
+    indices = trace_indices(degree, face, ranks)
     matrix = np.zeros((len(indices), count(degree, 3)))
     matrix[np.arange(len(indices)), indices] = 1.0
     return matrix
@@ -190,19 +197,25 @@ def lift_face(degree):
     return _to_array(lift_face_entries(degree), (n, n))
 
 
-def lift_scatter_indices(degree, face, level):
+def lift_scatter_indices(degree, face, level, ranks=(0, 1, 2)):
     """For every face coefficient of degree m - level, the volume coefficient of
-    degree m with index `level` at the opposite vertex that it lands on."""
+    degree m with index `level` at the opposite vertex that it lands on, for face
+    coefficients in the frame of the orientation `ranks`."""
     m = degree
     volume = _positions(m, 3)
     return [
-        volume[_volume_index(face, b, m - level, level)[1:]]
+        volume[_volume_index(face, b, m - level, level, ranks)[1:]]
         for b in basis_functions.bernstein_indices(m - level, 2)
     ]
 
 
-def lift(degree, face):
-    """The lift M^-1 rT^T M_face as a dense matrix, assembled from its factors."""
+def lift(degree, face, ranks=(0, 1, 2)):
+    """
+    The lift M^-1 rT^T M_face as a dense matrix, assembled from its factors, for
+    face coefficients in the frame of the orientation `ranks`. L_0 and the
+    elevations commute with the permutations of a face, so a frame changes the
+    scatters alone.
+    """
     m = degree
     L0 = lift_face(m)
     result = np.zeros((count(m, 3), count(m, 2)))
@@ -210,6 +223,6 @@ def lift(degree, face):
     for level, scale in enumerate(lift_coefficients(m)):
         if level > 0:
             chain = elevation(m - level + 1, 2).T @ chain
-        indices = lift_scatter_indices(m, face, level)
+        indices = lift_scatter_indices(m, face, level, ranks)
         result[indices, :] += float(scale) * chain
     return result

@@ -40,6 +40,20 @@ def fault_points(a, b, points):
 
 
 class dr_generator:
+    """
+    The matrices of a fault face for the quadrature rule q, in the basis `family`.
+
+    A cell reads its field at the points of the fault either from the volume
+    (V3mTo2n, for its side a and the orientation b of the face) or from its trace:
+    with the trace in the canonical frame of the face
+    (dg_matrices.dg_generator.canonical_rT) and the points given in that frame,
+    V2mTo2Quad reads the trace at the points for both sides alike, and the fault's
+    flux goes back through V2QuadTo2m and the canonical lift
+    (canonical_rDivM M_face, or bernstein_matrices.lift). In a basis that is not
+    hierarchical, the time derivatives of the predictor have lower degrees and
+    their traces are read with V2mTo2Quad of that degree.
+    """
+
     def __init__(self, o, q, family="dubiner"):
         self.order = o
         self.quadrule = q
@@ -88,8 +102,13 @@ class dr_generator:
         mass = self.dg2_generator.mass_matrix()
         return np.linalg.solve(mass, E)
 
-    def V2mTo2Quad(self):
-        return self.bf2_generator.eval_all(self.quadrule.points().T)
+    def V2mTo2Quad(self, degree=None):
+        """The face basis of the scheme, or of `degree`, at the points of the fault,
+        shape (points, face basis functions)."""
+        basis = self.bf2_generator
+        if degree is not None:
+            basis = basis_functions.generator(self.family, 2, degree + 1)
+        return basis.eval_all(self.quadrule.points().T)
 
     def resample(self):
         return self.V2mTo2Quad() @ self.V2QuadTo2m()
