@@ -2,7 +2,6 @@
 
 import os
 
-import numpy as np
 
 from seissol_matrices import basis_functions, dg_matrices, json_io, quad_points
 
@@ -19,9 +18,10 @@ class FaceQuadratureGenerator:
     sharing a face see the same points, only numbered differently.
     """
 
-    def __init__(self, order):
-        self.bf2_generator = basis_functions.BasisFunctionGenerator2D(order)
-        self.dg3_generator = dg_matrices.dg_generator(order, d=3)
+    def __init__(self, order, family="dubiner"):
+        self.family = family
+        self.bf2_generator = basis_functions.generator(family, 2, order)
+        self.dg3_generator = dg_matrices.dg_generator(order, d=3, family=family)
 
         rule = quad_points.symmetric(2 * (order - 1))
         self.points = rule.points()
@@ -29,14 +29,14 @@ class FaceQuadratureGenerator:
         self.vandermonde = self.generate_V2mToFaceQuad()
         self.rTs = [self.dg3_generator.rT(faceid) for faceid in range(4)]
 
-    def generate_V2mToFaceQuad(self):
-        """The face basis functions at the points, shape (points, face basis functions)."""
-        m = self.bf2_generator.number_of_basis_functions()
-        vandermonde = np.zeros((self.points.shape[0], m))
-        for i, p in enumerate(self.points):
-            for j in range(m):
-                vandermonde[i, j] = self.bf2_generator.eval_basis([p[0], p[1]], j)
-        return vandermonde
+    def generate_V2mToFaceQuad(self, degree=None):
+        """The face basis functions at the points, shape (points, face basis
+        functions): of the scheme, or of `degree` for the trace of a time derivative
+        in a basis that is not hierarchical."""
+        basis = self.bf2_generator
+        if degree is not None:
+            basis = basis_functions.generator(self.family, 2, degree + 1)
+        return basis.eval_all(self.points.T)
 
     def generate_VFaceQuadTo2m(self):
         """

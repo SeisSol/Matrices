@@ -23,6 +23,15 @@ def create_empty_json_file(filename):
     write_json([], filename)
 
 
+def _entries(tensor):
+    """The entries above 1e-14 of a tensor, as 1-based indices and the value."""
+    entries = []
+    for index in itertools.product(*[range(dim) for dim in tensor.shape]):
+        if np.abs(tensor[tuple(index)]) > 1e-14:
+            entries.append([i + 1 for i in index] + [str(tensor[tuple(index)])])
+    return entries
+
+
 def write_tensor(tensor, tensorname, filename):
     if not os.path.exists(filename):
         create_empty_json_file(filename)
@@ -30,12 +39,21 @@ def write_tensor(tensor, tensorname, filename):
     tensor_list = read_json(filename)
     assert isinstance(tensor_list, list)
 
-    entries = []
-    for index in itertools.product(*[range(dim) for dim in tensor.shape]):
-        if np.abs(tensor[tuple(index)]) > 1e-14:
-            entries.append([i + 1 for i in index] + [str(tensor[tuple(index)])])
-    m = {"name": tensorname, "shape": tensor.shape, "entries": entries}
+    m = {"name": tensorname, "shape": tensor.shape, "entries": _entries(tensor)}
     tensor_list.append(m)
+    write_json(tensor_list, filename)
+
+
+def write_tensors(tensors, filename):
+    """Writes the tensors {name: array} into one file at once, appending them to
+    the tensors the file has."""
+    tensor_list = read_json(filename) if os.path.exists(filename) else []
+    assert isinstance(tensor_list, list)
+    for tensorname, tensor in tensors.items():
+        tensor = np.asarray(tensor)
+        tensor_list.append(
+            {"name": tensorname, "shape": tensor.shape, "entries": _entries(tensor)}
+        )
     write_json(tensor_list, filename)
 
 

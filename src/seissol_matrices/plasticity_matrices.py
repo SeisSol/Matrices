@@ -19,9 +19,10 @@ def parse_nodes(filename):
 
 
 class PlasticityGenerator:
-    def __init__(self, order):
-        self.bf3_generator = basis_functions.BasisFunctionGenerator3D(order)
-        self.dg3_generator = dg_matrices.dg_generator(order, d=3)
+    def __init__(self, order, family="dubiner"):
+        self.family = family
+        self.bf3_generator = basis_functions.generator(family, 3, order)
+        self.dg3_generator = dg_matrices.dg_generator(order, d=3, family=family)
         self.order = order
 
     def quadrature_rule(self, mode):
@@ -57,52 +58,41 @@ class PlasticityGenerator:
 
         return nodes
 
-    def generate_Vandermonde(self, mode):
-        nodes = self.nodes(mode)
-        m = self.bf3_generator.number_of_basis_functions()
-        n = nodes.shape[0]
+    def _basis(self, degree):
+        if degree is None:
+            return self.bf3_generator
+        return basis_functions.generator(self.family, 3, degree + 1)
 
-        vandermonde = np.zeros((n, m))
-
-        for i in range(n):
-            for j in range(m):
-                node = nodes[i]
-                vandermonde[i, j] = self.bf3_generator.eval_basis(
-                    [node[0], node[1], node[2]], j
-                )
-
-        return vandermonde
+    def generate_Vandermonde(self, mode, degree=None):
+        """The basis at the points, shape (points, functions): of the scheme, or of
+        `degree` for the time derivatives of the predictor, which a basis that is
+        not hierarchical represents with fewer functions of their own."""
+        return self._basis(degree).eval_all(self.nodes(mode).T)
 
     def generate_VandermondeDerivative(self, mode):
-        nodes = self.nodes(mode)
-        m = self.bf3_generator.number_of_basis_functions()
-        n = nodes.shape[0]
+        nodes = self.nodes(mode).T
+        return np.stack([self.bf3_generator.eval_diff_all(nodes, k) for k in range(3)])
 
-        vandermonde = np.zeros((3, n, m))
-
-        for k in range(3):
-            for i in range(n):
-                for j in range(m):
-                    node = nodes[i]
-                    vandermonde[k, i, j] = self.bf3_generator.eval_diff_basis(
-                        [node[0], node[1], node[2]], j, k
-                    )
-
-        return vandermonde
-
-    def generate_Vandermonde_inv(self, mode):
-        vandermonde = self.generate_Vandermonde(mode)
+    def generate_Vandermonde_inv(self, mode, degree=None):
+        """
+        The map from values at the points back to the basis (of the scheme, or of
+        `degree`): the inverse of the Vandermonde matrix for the nodal points (nb),
+        and the L2 projection with the quadrature rule otherwise, M^-1 V^T W.
+        """
+        scheme = degree is None or degree == self.order - 1
+        vandermonde = self.generate_Vandermonde(mode, degree)
         if mode == "nb":
-            vandermonde_inv = np.linalg.solve(vandermonde, np.eye(vandermonde.shape[0]))
-        else:
+            if not scheme:
+                raise ValueError(
+                    "the nodal points are unisolvent for the degree of the scheme alone"
+                )
+            return np.linalg.solve(vandermonde, np.eye(vandermonde.shape[0]))
+        if scheme:
             mass = self.dg3_generator.mass_matrix()
-            nodes, weights = self.quadrature_rule(mode)
-            vandermonde_inv = np.zeros(vandermonde.T.shape)
-            for l in range(vandermonde_inv.shape[0]):
-                for i in range(vandermonde_inv.shape[1]):
-                    vandermonde_inv[l, i] = vandermonde[i, l] * weights[i] / mass[l, l]
-
-        return vandermonde_inv
+        else:
+            mass = dg_matrices.dg_generator(degree + 1, 3, self.family).mass_matrix()
+        _, weights = self.quadrature_rule(mode)
+        return np.linalg.solve(mass, vandermonde.T * weights[None, :])
 
 
 if __name__ == "__main__":

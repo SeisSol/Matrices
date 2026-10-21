@@ -7,69 +7,70 @@ from seissol_matrices import dg_matrices
 from seissol_matrices import quad_points
 
 
+def fault_points(a, b, points):
+    """
+    The points (shape points x 2) of a fault face in the coordinates of the
+    tetrahedron, shape 3 x points: on its side a, with the face parametrised as
+    the cell sees it (b = 0) or as its neighbour does with the orientation b - 1
+    (see dg_matrices.dg_generator.face_to_face_parametrisation).
+    """
+    p0 = points[:, 0]
+    p1 = points[:, 1]
+    p2 = 1.0 - p0 - p1
+    zero = np.zeros_like(p0)
+    table = {
+        (0, 0): (p1, p0, zero),
+        (0, 1): (p0, p1, zero),
+        (0, 2): (p1, p2, zero),
+        (0, 3): (p2, p0, zero),
+        (1, 0): (p0, zero, p1),
+        (1, 1): (p1, zero, p0),
+        (1, 2): (p2, zero, p1),
+        (1, 3): (p0, zero, p2),
+        (2, 0): (zero, p1, p0),
+        (2, 1): (zero, p0, p1),
+        (2, 2): (zero, p1, p2),
+        (2, 3): (zero, p2, p0),
+        (3, 0): (p2, p0, p1),
+        (3, 1): (p2, p1, p0),
+        (3, 2): (p0, p2, p1),
+        (3, 3): (p1, p0, p2),
+    }
+    return np.stack(table[(a, b)])
+
+
 class dr_generator:
-    def __init__(self, o, q):
+    """
+    The matrices of a fault face for the quadrature rule q, in the basis `family`.
+
+    A cell reads its field at the points of the fault either from the volume
+    (V3mTo2n, for its side a and the orientation b of the face) or from its trace:
+    with the trace in the canonical frame of the face
+    (dg_matrices.dg_generator.canonical_rT) and the points given in that frame,
+    V2mTo2Quad reads the trace at the points for both sides alike, and the fault's
+    flux goes back through V2QuadTo2m and the canonical lift
+    (canonical_rDivM M_face, or bernstein_matrices.lift). In a basis that is not
+    hierarchical, the time derivatives of the predictor have lower degrees and
+    their traces are read with V2mTo2Quad of that degree.
+    """
+
+    def __init__(self, o, q, family="dubiner"):
         self.order = o
         self.quadrule = q
-        self.bf3_generator = basis_functions.BasisFunctionGenerator3D(self.order)
-        self.bf2_generator = basis_functions.BasisFunctionGenerator2D(self.order)
-        self.dg3_generator = dg_matrices.dg_generator(self.order, 3)
-        self.dg2_generator = dg_matrices.dg_generator(self.order, 2)
+        self.family = family
+        self.bf3_generator = basis_functions.generator(family, 3, self.order)
+        self.bf2_generator = basis_functions.generator(family, 2, self.order)
+        self.dg3_generator = dg_matrices.dg_generator(self.order, 3, family)
+        self.dg2_generator = dg_matrices.dg_generator(self.order, 2, family)
 
     def V3mTo2n(self, a, b, matorder=None):
-        m = self.bf3_generator.number_of_basis_functions()
-        points = self.quadrule.points()
-        n = points.shape[0]
-
+        points = fault_points(a, b, self.quadrule.points())
+        values = self.bf3_generator.eval_all(points)
         if matorder is None:
-            evalfun = lambda q, j, k: self.bf3_generator.eval_basis(q, j)
-            materialdim = 1
-        else:
-            materialbasis = basis_functions.BasisFunctionGenerator3D(matorder)
-            evalfun = lambda q, j, k: self.bf3_generator.eval_basis(
-                q, j
-            ) * materialbasis.eval_basis(q, k)
-            materialdim = materialbasis.number_of_basis_functions()
-
-        matrix = np.zeros((materialdim, n, m))
-        for i, p in enumerate(points):
-            for j in range(m):
-                for k in range(materialdim):
-                    if a == 0 and b == 0:
-                        matrix[k, i, j] = evalfun([p[1], p[0], 0], j, k)
-                    if a == 0 and b == 1:
-                        matrix[k, i, j] = evalfun([p[0], p[1], 0], j, k)
-                    if a == 0 and b == 2:
-                        matrix[k, i, j] = evalfun([p[1], 1 - p[0] - p[1], 0], j, k)
-                    if a == 0 and b == 3:
-                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], p[0], 0], j, k)
-                    if a == 1 and b == 0:
-                        matrix[k, i, j] = evalfun([p[0], 0, p[1]], j, k)
-                    if a == 1 and b == 1:
-                        matrix[k, i, j] = evalfun([p[1], 0, p[0]], j, k)
-                    if a == 1 and b == 2:
-                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], 0, p[1]], j, k)
-                    if a == 1 and b == 3:
-                        matrix[k, i, j] = evalfun([p[0], 0, 1 - p[0] - p[1]], j, k)
-                    if a == 2 and b == 0:
-                        matrix[k, i, j] = evalfun([0, p[1], p[0]], j, k)
-                    if a == 2 and b == 1:
-                        matrix[k, i, j] = evalfun([0, p[0], p[1]], j, k)
-                    if a == 2 and b == 2:
-                        matrix[k, i, j] = evalfun([0, p[1], 1 - p[0] - p[1]], j, k)
-                    if a == 2 and b == 3:
-                        matrix[k, i, j] = evalfun([0, 1 - p[0] - p[1], p[0]], j, k)
-                    if a == 3 and b == 0:
-                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], p[0], p[1]], j, k)
-                    if a == 3 and b == 1:
-                        matrix[k, i, j] = evalfun([1 - p[0] - p[1], p[1], p[0]], j, k)
-                    if a == 3 and b == 2:
-                        matrix[k, i, j] = evalfun([p[0], 1 - p[0] - p[1], p[1]], j, k)
-                    if a == 3 and b == 3:
-                        matrix[k, i, j] = evalfun([p[1], p[0], 1 - p[0] - p[1]], j, k)
-        if matorder is None:
-            matrix = np.squeeze(matrix)
-        return matrix
+            return values
+        materialbasis = basis_functions.generator(self.family, 3, matorder)
+        material = materialbasis.eval_all(points)
+        return np.einsum("ij,ik->kij", values, material)
 
     def V3mTo2nTWDivM(self, a, b, matorder=None):
         matrix = self.V3mTo2n(a, b, matorder)
@@ -95,33 +96,19 @@ class dr_generator:
         return weights
 
     def V2QuadTo2m(self):
-        n = self.bf2_generator.number_of_basis_functions()
         points = self.quadrule.points()
         weights = self.quadrule.weights()
-        m = weights.shape[0]
-
-        E = np.zeros((n, m))
-        for i in range(n):
-            for j, p in enumerate(points):
-                E[i, j] = self.bf2_generator.eval_basis(p, i) * weights[j]
-
+        E = self.bf2_generator.eval_all(points.T).T * weights[None, :]
         mass = self.dg2_generator.mass_matrix()
+        return np.linalg.solve(mass, E)
 
-        V = np.linalg.solve(mass, E)
-
-        return V
-
-    def V2mTo2Quad(self):
-        n = self.bf2_generator.number_of_basis_functions()
-        points = self.quadrule.points()
-        m = points.shape[0]
-
-        E = np.zeros((m, n))
-        for i in range(n):
-            for j, p in enumerate(points):
-                E[j, i] = self.bf2_generator.eval_basis(p, i)
-
-        return E
+    def V2mTo2Quad(self, degree=None):
+        """The face basis of the scheme, or of `degree`, at the points of the fault,
+        shape (points, face basis functions)."""
+        basis = self.bf2_generator
+        if degree is not None:
+            basis = basis_functions.generator(self.family, 2, degree + 1)
+        return basis.eval_all(self.quadrule.points().T)
 
     def resample(self):
         return self.V2mTo2Quad() @ self.V2QuadTo2m()

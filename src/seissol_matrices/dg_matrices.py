@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import quad_rules.WitherdenVincentTri
 import quad_rules.WitherdenVincentTet
@@ -5,26 +7,139 @@ import quad_rules.JaskowiecSukumar
 import quad_rules.GaussJacobi
 import quad_rules.Quadrature
 
-import itertools
 
 from seissol_matrices import base
 
 from seissol_matrices import basis_functions
 
 
+#: An integral at most this much of the largest one of its form vanishes. The
+#: quadrature leaves rounding of a few 1e-16 of the largest entry where an
+#: integral is zero, while the smallest integral that is not, at order 8, is
+#: about 3e-9 of it.
+ZERO_TOLERANCE = 1e-12
+
+
+def snap_zeros(tensor, tolerance=ZERO_TOLERANCE):
+    """The tensor with every entry of at most `tolerance` times its largest
+    entry set to zero."""
+    magnitude = np.abs(tensor)
+    largest = magnitude.max() if magnitude.size > 0 else 0.0
+    return np.where(magnitude > tolerance * largest, tensor, 0.0)
+
+
+def face_to_face_parametrisation(x, side):
+    # implement Dumbser & Käser, 2006 Table 2 b)
+    # chi = x[0,:]
+    # tau = x[1,:]
+    # y[0,:] = chi ~
+    # y[1,:] = tau ~
+    y = np.zeros((x.shape[0], x.shape[1]))
+    if side == 0:
+        y[0, :] = x[1, :]
+        y[1, :] = x[0, :]
+    elif side == 1:
+        y[0, :] = 1 - x[0, :] - x[1, :]
+        y[1, :] = x[1, :]
+    elif side == 2:
+        y[0, :] = x[0, :]
+        y[1, :] = 1 - x[0, :] - x[1, :]
+    return y
+
+
+def volume_to_face_parametrisation(x, side):
+    # implement Dumbser & Käser, 2006 Table 2 a)
+    # chi = x[0,:]
+    # tau = x[1,:]
+    # y[0,:] = xi(j)
+    # y[1,:] = eta(j)
+    # y[2,:] = zeta(j)
+    y = np.zeros((x.shape[0] + 1, x.shape[1]))
+    if side == 0:
+        y[0, :] = x[1, :]
+        y[1, :] = x[0, :]
+    elif side == 1:
+        y[0, :] = x[0, :]
+        y[2, :] = x[1, :]
+    elif side == 2:
+        y[1, :] = x[1, :]
+        y[2, :] = x[0, :]
+    elif side == 3:
+        y[0, :] = 1 - x[0, :] - x[1, :]
+        y[1, :] = x[0, :]
+        y[2, :] = x[1, :]
+    return y
+
+
+def face_vertices(face):
+    """The vertices of the tetrahedron at the points (0, 0), (1, 0), (0, 1) of a
+    face, as volume_to_face_parametrisation places the face."""
+    corners = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    points = volume_to_face_parametrisation(corners, face)
+    vertices = np.vstack([np.zeros(3), np.eye(3)])
+    return tuple(
+        int(np.argmin(np.linalg.norm(vertices - points[:, s], axis=1)))
+        for s in range(3)
+    )
+
+
+def opposite_vertex(face):
+    """The vertex of the tetrahedron not on a face."""
+    return ({0, 1, 2, 3} - set(face_vertices(face))).pop()
+
+
+#: The orientations a face can have against its canonical frame, see
+#: canonical_to_face_parametrisation.
+FACE_ORIENTATIONS = tuple(itertools.permutations(range(3)))
+
+
+def canonical_to_face_parametrisation(x, ranks):
+    """
+    A point x (2 x points) of a face in its canonical frame, in the coordinates of
+    the face as a cell parametrises it (volume_to_face_parametrisation).
+
+    The canonical frame of a face places the vertex with the smallest global ID at
+    (0, 0), the next one at (1, 0) and the largest at (0, 1), so that both cells of
+    the face see it alike. `ranks` is the orientation of the cell's face against
+    it (one of FACE_ORIENTATIONS): the rank, among the three vertices of the face
+    ordered by global ID, of the vertex the cell has at (0, 0), (1, 0), (0, 1).
+    """
+    canonical = [1.0 - x[0] - x[1], x[0], x[1]]
+    local = [canonical[rank] for rank in ranks]
+    return np.stack([local[1], local[2]])
+
+
+def sorted_vertex_ranks(face):
+    """The orientation of a face of a cell whose local vertices are ordered by
+    their global IDs."""
+    vertices = face_vertices(face)
+    ordered = sorted(vertices)
+    return tuple(ordered.index(vertex) for vertex in vertices)
+
+
 ### Generates matrices which are of general interest for DG methods:
 ### Mass and Stiffness matrices
 ### kDivM and kDivMT which are SeisSol specific
 class dg_generator:
-    def __init__(self, o, d):
+    """
+    The matrices of the DG scheme on the reference tetrahedron (d = 3), triangle
+    (d = 2) or interval (d = 1), for polynomials of degree o - 1 in the basis
+    `family` (see basis_functions.FAMILIES).
+    """
+
+    def __init__(self, o, d, family="dubiner"):
         self.order = o
         self.dim = d
+        self.family = family
 
         self.M = None
         self.K = self.dim * [None]
 
+        self.generator_finder = lambda order: basis_functions.generator(
+            family, self.dim, order
+        )
+        self.generator = self.generator_finder(self.order)
         if self.dim == 3:
-            self.generator = basis_functions.BasisFunctionGenerator3D(self.order)
             self.geometry = np.array(
                 [
                     [0.0, 0.0, 0.0],
@@ -33,27 +148,20 @@ class dg_generator:
                     [0.0, 0.0, 1.0],
                 ]
             )
-            self.face_generator = dg_generator(o, 2)
+            self.face_generator = dg_generator(o, 2, family)
             self.quadrule_finder = (
                 quad_rules.JaskowiecSukumar.JaskowiecSukumar().find_best_rule
             )
-            self.generator_finder = basis_functions.BasisFunctionGenerator3D
         elif self.dim == 2:
-            self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
             self.geometry = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
             self.quadrule_finder = (
                 quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule
             )
-            self.generator_finder = basis_functions.BasisFunctionGenerator2D
-        elif self.dim == 1:
-            self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
+        else:
             self.geometry = np.array([[0.0], [1.0]])
             self.quadrule_finder = quad_rules.GaussJacobi.GaussJacobi(
                 0, 0
             ).find_best_rule
-            self.generator_finder = basis_functions.BasisFunctionGenerator1D
-        else:
-            raise Execption("Can only generate 1D, 2D or 2D basis functions")
 
         self.nodes, self.weights = self.get_quadrature_rule(2 * self.order)
 
@@ -81,10 +189,6 @@ class dg_generator:
         otherwise the respective face side. If an entry is None, then we assume the respective volume term.
         """
 
-        # NOTE: we could extract the multiplication/quadrature part from the function selection part.
-        # I.e., eval_functions (or a list of basis functions here) could be given as an input parameter,
-        # instead of the two current ones.
-
         # we only support a first derivative at the moment
         assert np.all([d in (None, *(i for i in range(self.dim))) for d in der])
 
@@ -100,52 +204,43 @@ class dg_generator:
         assert len(order) == len(der)
         assert len(side) == len(der)
 
-        def get_basis_function(o, d, s, r):
+        def values(o, d, s, r, points):
+            # the basis (or its derivative) of order o and dimension r at the
+            # points, (points, functions), through the parametrisation a side asks for
             if r == 3:
                 basis = self.generator_finder(o)
             else:
                 basis = self.face_generator.generator_finder(o)
-            basiseval_pre = (
-                basis.eval_basis
-                if d is None
-                else lambda x, i: basis.eval_diff_basis(x, i, d)
-            )
             if face:
                 if r == 3:
-                    basiseval = lambda x, i: basiseval_pre(
-                        self.volume_to_face_parametrisation(x, s), i
-                    )
-                else:
-                    if s is None:
-                        basiseval = basiseval_pre
-                    else:
-                        basiseval = lambda x, i: basiseval_pre(
-                            self.face_to_face_parametrisation(x, s), i
-                        )
+                    points = self.volume_to_face_parametrisation(points, s)
+                elif s is not None:
+                    points = self.face_to_face_parametrisation(points, s)
             else:
                 # volume * face does not make sense when evaluating on the whole volume
                 assert r == 3
-                basiseval = basiseval_pre
-            return basiseval, basis.number_of_basis_functions()
-
-        basis_functions = [
-            get_basis_function(o, d, s, r) for o, d, s, r in zip(order, der, side, dim)
-        ]
+            if d is None:
+                return basis.eval_all(points)
+            return basis.eval_diff_all(points, d)
 
         if face:
             nodes, weights = self.face_generator.get_quadrature_rule(np.sum(order))
         else:
             nodes, weights = self.get_quadrature_rule(np.sum(order))
+        points = nodes.T
 
-        sizes = [bn for _, bn in basis_functions]
-        tensor = np.empty(sizes)
-        generic_eval_basis = lambda x, index: np.prod(
-            [basis_functions[k][0](x, i) for k, i in enumerate(index)], axis=0
-        )
-        for index in itertools.product(*[range(size) for size in sizes]):
-            eval_basis = lambda x: generic_eval_basis(x, index)
-            tensor[index] = quad_rules.Quadrature.quad(nodes, weights, eval_basis)
-        return tensor
+        factors = [
+            values(o, d, s, r, points) for o, d, s, r in zip(order, der, side, dim)
+        ]
+        letters = "abcdefghijklmnop"[: len(factors)]
+        subscripts = "q," + ",".join(f"q{a}" for a in letters) + "->" + letters
+        return snap_zeros(np.einsum(subscripts, weights, *factors, optimize=True))
+
+    def basis_integrals(self):
+        """The integrals of the basis functions over the reference element. In an
+        orthogonal basis whose first function is constant they vanish but for the
+        first one; in other bases every coefficient adds to the mean of the cell."""
+        return self.multilinear_form(False, [None], order=[self.order])
 
     def mass_matrix(self):
         if not np.any(self.M == None):
@@ -190,22 +285,7 @@ class dg_generator:
         return base.material_index_last(np.linalg.solve(mass, sT))
 
     def face_to_face_parametrisation(self, x, side):
-        # implement Dumbser & Käser, 2006 Table 2 b)
-        # chi = x[0,:]
-        # tau = x[1,:]
-        # y[0,:] = chi ~
-        # y[1,:] = tau ~
-        y = np.zeros((x.shape[0], x.shape[1]))
-        if side == 0:
-            y[0, :] = x[1, :]
-            y[1, :] = x[0, :]
-        elif side == 1:
-            y[0, :] = 1 - x[0, :] - x[1, :]
-            y[1, :] = x[1, :]
-        elif side == 2:
-            y[0, :] = x[0, :]
-            y[1, :] = 1 - x[0, :] - x[1, :]
-        return y
+        return face_to_face_parametrisation(x, side)
 
     def face_times_face_mass_matrix(self, side):
         assert self.dim == 3
@@ -215,27 +295,7 @@ class dg_generator:
         return self.face_times_face_mass_matrix(side)
 
     def volume_to_face_parametrisation(self, x, side):
-        # implement Dumbser & Käser, 2006 Table 2 a)
-        # chi = x[0,:]
-        # tau = x[1,:]
-        # y[0,:] = xi(j)
-        # y[1,:] = eta(j)
-        # y[2,:] = zeta(j)
-        y = np.zeros((x.shape[0] + 1, x.shape[1]))
-        if side == 0:
-            y[0, :] = x[1, :]
-            y[1, :] = x[0, :]
-        elif side == 1:
-            y[0, :] = x[0, :]
-            y[2, :] = x[1, :]
-        elif side == 2:
-            y[1, :] = x[1, :]
-            y[2, :] = x[0, :]
-        elif side == 3:
-            y[0, :] = 1 - x[0, :] - x[1, :]
-            y[1, :] = x[0, :]
-            y[2, :] = x[1, :]
-        return y
+        return volume_to_face_parametrisation(x, side)
 
     def volume_times_face_mass_matrix(self, side):
         assert self.dim == 3
@@ -249,6 +309,27 @@ class dg_generator:
         mass = self.face_generator.mass_matrix()
         return np.linalg.solve(mass, matrix)
 
+    def canonical_rT(self, face, ranks):
+        """
+        The trace on a face in the face basis of its canonical frame: the same
+        coefficients from both cells of the face, whatever their numbering
+        (see canonical_to_face_parametrisation). A cell whose face has the
+        orientation `ranks` reads its trace there with this matrix.
+        """
+        assert self.dim == 3
+        nodes, weights = self.face_generator.get_quadrature_rule(2 * self.order)
+        x = nodes.T
+        local = canonical_to_face_parametrisation(x, ranks)
+        volume = self.generator.eval_all(volume_to_face_parametrisation(local, face))
+        face_values = self.face_generator.generator.eval_all(x)
+        moments = (face_values * weights[:, None]).T @ volume
+        return np.linalg.solve(self.face_generator.mass_matrix(), moments)
+
+    def canonical_rDivM(self, face, ranks):
+        """M^-1 canonical_rT^T, which takes what a flux gives in the canonical frame
+        of a face back into the cell, as rDivM does from the cell's own frame."""
+        return np.linalg.solve(self.mass_matrix(), self.canonical_rT(face, ranks).T)
+
     def rDivM(self, side, matorder=None):
         assert self.dim == 3
         mass = self.mass_matrix()
@@ -256,11 +337,12 @@ class dg_generator:
             matrix = self.rT(side).T
             return np.linalg.solve(mass, matrix)
 
+        # the material is a field of the cell, read on the face like the basis
         prematrix = self.multilinear_form(
             True,
             [None, None, None],
             order=[matorder, self.order, self.order],
-            side=[None, None, side],
+            side=[side, None, side],
             dim=[3, 2, 3],
         )
         facemass = self.face_generator.mass_matrix()
@@ -276,6 +358,21 @@ class dg_generator:
         # this method wants dim × npoints; but points is given the other way. So, we transpose it twice
         projected = self.volume_to_face_parametrisation(points.T, side).T
         return base.collocate(self.generator, projected)
+
+
+def basis_change(order, dim, source, target):
+    """
+    The matrix T with c_target = T c_source for the same polynomial of degree
+    order - 1 on the reference element of the dimension, in the basis families
+    source and target: M_target^-1 int phi_target phi_source.
+    """
+    generator = dg_generator(order, dim, target)
+    nodes, weights = generator.get_quadrature_rule(2 * order)
+    points = nodes.T
+    phi_target = generator.generator.eval_all(points)
+    phi_source = basis_functions.generator(source, dim, order).eval_all(points)
+    moments = (phi_target * weights[:, None]).T @ phi_source
+    return np.linalg.solve(generator.mass_matrix(), moments)
 
 
 if __name__ == "__main__":

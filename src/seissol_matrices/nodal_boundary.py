@@ -12,10 +12,10 @@ def parse_nodes(filename):
 
 
 class NodalBoundaryGenerator:
-    def __init__(self, order):
-        self.bf2_generator = basis_functions.BasisFunctionGenerator2D(order)
-        self.dg2_generator = dg_matrices.dg_generator(order, d=2)
-        self.dg3_generator = dg_matrices.dg_generator(order, d=3)
+    def __init__(self, order, family="dubiner"):
+        self.bf2_generator = basis_functions.generator(family, 2, order)
+        self.dg2_generator = dg_matrices.dg_generator(order, d=2, family=family)
+        self.dg3_generator = dg_matrices.dg_generator(order, d=3, family=family)
 
         self.nodes = parse_nodes(f"{os.path.dirname(__file__)}/nodal/nodes_{order}.txt")
         self.vandermonde = self.generate_Vandermonde()
@@ -25,15 +25,7 @@ class NodalBoundaryGenerator:
     def generate_Vandermonde(self):
         m = self.bf2_generator.number_of_basis_functions()
         assert self.nodes.shape[0] == m
-
-        vandermonde = np.zeros((m, m))
-
-        for i in range(m):
-            for j in range(m):
-                n = self.nodes[i]
-                vandermonde[i, j] = self.bf2_generator.eval_basis([n[0], n[1]], j)
-
-        return vandermonde
+        return self.bf2_generator.eval_all(self.nodes.T)
 
     def generate_V2mTo2n(self):
         return self.vandermonde
