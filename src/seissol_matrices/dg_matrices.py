@@ -12,6 +12,21 @@ from seissol_matrices import base
 from seissol_matrices import basis_functions
 
 
+#: An integral at most this much of the largest one of its form vanishes. The
+#: quadrature leaves rounding of a few 1e-16 of the largest entry where an
+#: integral is zero, while the smallest integral that is not, at order 8, is
+#: about 3e-9 of it.
+ZERO_TOLERANCE = 1e-12
+
+
+def snap_zeros(tensor, tolerance=ZERO_TOLERANCE):
+    """The tensor with every entry of at most `tolerance` times its largest
+    entry set to zero."""
+    magnitude = np.abs(tensor)
+    largest = magnitude.max() if magnitude.size > 0 else 0.0
+    return np.where(magnitude > tolerance * largest, tensor, 0.0)
+
+
 ### Generates matrices which are of general interest for DG methods:
 ### Mass and Stiffness matrices
 ### kDivM and kDivMT which are SeisSol specific
@@ -145,7 +160,7 @@ class dg_generator:
         for index in itertools.product(*[range(size) for size in sizes]):
             eval_basis = lambda x: generic_eval_basis(x, index)
             tensor[index] = quad_rules.Quadrature.quad(nodes, weights, eval_basis)
-        return tensor
+        return snap_zeros(tensor)
 
     def mass_matrix(self):
         if not np.any(self.M == None):
