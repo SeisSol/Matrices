@@ -1,24 +1,13 @@
 #!/bin/env python3
-import numpy as np
 from seissol_matrices import basis_functions, quad_points, xml_io
 
 import json
 import sys
 
 
-def generate_V2mTo2n(order, quadrule):
-    bf2_generator = basis_functions.BasisFunctionGenerator2D(order)
-    m = bf2_generator.number_of_basis_functions()
-
-    points = quadrule.points()
-
-    n = points.shape[0]
-    matrix = np.zeros((n, m))
-    for i, p in enumerate(points):
-        for j in range(m):
-            matrix[i, j] = bf2_generator.eval_basis([p[0], p[1]], j)
-
-    return matrix
+def generate_V2mTo2n(order, quadrule, family="dubiner"):
+    bf2_generator = basis_functions.generator(family, 2, order)
+    return bf2_generator.eval_all(quadrule.points().T)
 
 
 def main():

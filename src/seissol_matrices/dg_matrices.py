@@ -30,15 +30,25 @@ def snap_zeros(tensor, tolerance=ZERO_TOLERANCE):
 ### Mass and Stiffness matrices
 ### kDivM and kDivMT which are SeisSol specific
 class dg_generator:
-    def __init__(self, o, d):
+    """
+    The matrices of the DG scheme on the reference tetrahedron (d = 3), triangle
+    (d = 2) or interval (d = 1), for polynomials of degree o - 1 in the basis
+    `family` (see basis_functions.FAMILIES).
+    """
+
+    def __init__(self, o, d, family="dubiner"):
         self.order = o
         self.dim = d
+        self.family = family
 
         self.M = None
         self.K = self.dim * [None]
 
+        self.generator_finder = lambda order: basis_functions.generator(
+            family, self.dim, order
+        )
+        self.generator = self.generator_finder(self.order)
         if self.dim == 3:
-            self.generator = basis_functions.BasisFunctionGenerator3D(self.order)
             self.geometry = np.array(
                 [
                     [0.0, 0.0, 0.0],
@@ -47,27 +57,20 @@ class dg_generator:
                     [0.0, 0.0, 1.0],
                 ]
             )
-            self.face_generator = dg_generator(o, 2)
+            self.face_generator = dg_generator(o, 2, family)
             self.quadrule_finder = (
                 quad_rules.JaskowiecSukumar.JaskowiecSukumar().find_best_rule
             )
-            self.generator_finder = basis_functions.BasisFunctionGenerator3D
         elif self.dim == 2:
-            self.generator = basis_functions.BasisFunctionGenerator2D(self.order)
             self.geometry = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
             self.quadrule_finder = (
                 quad_rules.WitherdenVincentTri.WitherdenVincentTri().find_best_rule
             )
-            self.generator_finder = basis_functions.BasisFunctionGenerator2D
-        elif self.dim == 1:
-            self.generator = basis_functions.BasisFunctionGenerator1D(self.order)
+        else:
             self.geometry = np.array([[0.0], [1.0]])
             self.quadrule_finder = quad_rules.GaussJacobi.GaussJacobi(
                 0, 0
             ).find_best_rule
-            self.generator_finder = basis_functions.BasisFunctionGenerator1D
-        else:
-            raise Execption("Can only generate 1D, 2D or 2D basis functions")
 
         self.nodes, self.weights = self.get_quadrature_rule(2 * self.order)
 
