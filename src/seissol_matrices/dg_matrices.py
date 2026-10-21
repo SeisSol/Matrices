@@ -236,6 +236,12 @@ class dg_generator:
         subscripts = "q," + ",".join(f"q{a}" for a in letters) + "->" + letters
         return snap_zeros(np.einsum(subscripts, weights, *factors, optimize=True))
 
+    def basis_integrals(self):
+        """The integrals of the basis functions over the reference element. In an
+        orthogonal basis whose first function is constant they vanish but for the
+        first one; in other bases every coefficient adds to the mean of the cell."""
+        return self.multilinear_form(False, [None], order=[self.order])
+
     def mass_matrix(self):
         if not np.any(self.M == None):
             return self.M
@@ -351,6 +357,21 @@ class dg_generator:
         # this method wants dim × npoints; but points is given the other way. So, we transpose it twice
         projected = self.volume_to_face_parametrisation(points.T, side).T
         return base.collocate(self.generator, projected)
+
+
+def basis_change(order, dim, source, target):
+    """
+    The matrix T with c_target = T c_source for the same polynomial of degree
+    order - 1 on the reference element of the dimension, in the basis families
+    source and target: M_target^-1 int phi_target phi_source.
+    """
+    generator = dg_generator(order, dim, target)
+    nodes, weights = generator.get_quadrature_rule(2 * order)
+    points = nodes.T
+    phi_target = generator.generator.eval_all(points)
+    phi_source = basis_functions.generator(source, dim, order).eval_all(points)
+    moments = (phi_target * weights[:, None]).T @ phi_source
+    return np.linalg.solve(generator.mass_matrix(), moments)
 
 
 if __name__ == "__main__":

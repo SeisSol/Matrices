@@ -543,3 +543,35 @@ def generator(family, dim, order):
     if (family, dim) not in _GENERATORS:
         raise ValueError(f"no basis on a reference element of dimension {dim}")
     return _GENERATORS[(family, dim)](order)
+
+
+def describe(family):
+    """
+    What a consumer of the matrices of a basis may rely on, as plain data: whether
+    it is hierarchical, orthogonal and orthonormal, the structure of its mass
+    matrices (identity, diagonal or dense), and the order of its functions.
+    """
+    basis = generator(family, 3, 2)
+    if basis.orthonormal:
+        mass = "identity"
+    elif basis.orthogonal:
+        mass = "diagonal"
+    else:
+        mass = "dense"
+    if family == "bernstein":
+        ordering = (
+            "multi-indices (a_1, ..., a_dim) of the degree, a_dim slowest and a_1 "
+            "fastest, a_0 = degree - a_1 - ... - a_dim at the vertex at the origin"
+        )
+    else:
+        ordering = (
+            "by degree; within a degree as BasisFunctionGenerator2D/3D.unroll_index"
+        )
+    return {
+        "family": family,
+        "hierarchical": basis.hierarchical,
+        "orthogonal": basis.orthogonal,
+        "orthonormal": basis.orthonormal,
+        "mass": mass,
+        "ordering": ordering,
+    }

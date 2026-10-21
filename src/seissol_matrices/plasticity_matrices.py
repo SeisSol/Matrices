@@ -20,6 +20,7 @@ def parse_nodes(filename):
 
 class PlasticityGenerator:
     def __init__(self, order, family="dubiner"):
+        self.family = family
         self.bf3_generator = basis_functions.generator(family, 3, order)
         self.dg3_generator = dg_matrices.dg_generator(order, d=3, family=family)
         self.order = order
@@ -57,23 +58,39 @@ class PlasticityGenerator:
 
         return nodes
 
-    def generate_Vandermonde(self, mode):
-        return self.bf3_generator.eval_all(self.nodes(mode).T)
+    def _basis(self, degree):
+        if degree is None:
+            return self.bf3_generator
+        return basis_functions.generator(self.family, 3, degree + 1)
+
+    def generate_Vandermonde(self, mode, degree=None):
+        """The basis at the points, shape (points, functions): of the scheme, or of
+        `degree` for the time derivatives of the predictor, which a basis that is
+        not hierarchical represents with fewer functions of their own."""
+        return self._basis(degree).eval_all(self.nodes(mode).T)
 
     def generate_VandermondeDerivative(self, mode):
         nodes = self.nodes(mode).T
         return np.stack([self.bf3_generator.eval_diff_all(nodes, k) for k in range(3)])
 
-    def generate_Vandermonde_inv(self, mode):
+    def generate_Vandermonde_inv(self, mode, degree=None):
         """
-        The map from values at the points back to the basis: the inverse of the
-        Vandermonde matrix for the nodal points (nb), and the L2 projection with
-        the quadrature rule otherwise, M^-1 V^T W.
+        The map from values at the points back to the basis (of the scheme, or of
+        `degree`): the inverse of the Vandermonde matrix for the nodal points (nb),
+        and the L2 projection with the quadrature rule otherwise, M^-1 V^T W.
         """
-        vandermonde = self.generate_Vandermonde(mode)
+        scheme = degree is None or degree == self.order - 1
+        vandermonde = self.generate_Vandermonde(mode, degree)
         if mode == "nb":
+            if not scheme:
+                raise ValueError(
+                    "the nodal points are unisolvent for the degree of the scheme alone"
+                )
             return np.linalg.solve(vandermonde, np.eye(vandermonde.shape[0]))
-        mass = self.dg3_generator.mass_matrix()
+        if scheme:
+            mass = self.dg3_generator.mass_matrix()
+        else:
+            mass = dg_matrices.dg_generator(degree + 1, 3, self.family).mass_matrix()
         _, weights = self.quadrature_rule(mode)
         return np.linalg.solve(mass, vandermonde.T * weights[None, :])
 
