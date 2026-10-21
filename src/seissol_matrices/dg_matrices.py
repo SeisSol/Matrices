@@ -5,7 +5,6 @@ import quad_rules.JaskowiecSukumar
 import quad_rules.GaussJacobi
 import quad_rules.Quadrature
 
-import itertools
 
 from seissol_matrices import base
 
@@ -96,10 +95,6 @@ class dg_generator:
         otherwise the respective face side. If an entry is None, then we assume the respective volume term.
         """
 
-        # NOTE: we could extract the multiplication/quadrature part from the function selection part.
-        # I.e., eval_functions (or a list of basis functions here) could be given as an input parameter,
-        # instead of the two current ones.
-
         # we only support a first derivative at the moment
         assert np.all([d in (None, *(i for i in range(self.dim))) for d in der])
 
@@ -115,52 +110,37 @@ class dg_generator:
         assert len(order) == len(der)
         assert len(side) == len(der)
 
-        def get_basis_function(o, d, s, r):
+        def values(o, d, s, r, points):
+            # the basis (or its derivative) of order o and dimension r at the
+            # points, (points, functions), through the parametrisation a side asks for
             if r == 3:
                 basis = self.generator_finder(o)
             else:
                 basis = self.face_generator.generator_finder(o)
-            basiseval_pre = (
-                basis.eval_basis
-                if d is None
-                else lambda x, i: basis.eval_diff_basis(x, i, d)
-            )
             if face:
                 if r == 3:
-                    basiseval = lambda x, i: basiseval_pre(
-                        self.volume_to_face_parametrisation(x, s), i
-                    )
-                else:
-                    if s is None:
-                        basiseval = basiseval_pre
-                    else:
-                        basiseval = lambda x, i: basiseval_pre(
-                            self.face_to_face_parametrisation(x, s), i
-                        )
+                    points = self.volume_to_face_parametrisation(points, s)
+                elif s is not None:
+                    points = self.face_to_face_parametrisation(points, s)
             else:
                 # volume * face does not make sense when evaluating on the whole volume
                 assert r == 3
-                basiseval = basiseval_pre
-            return basiseval, basis.number_of_basis_functions()
-
-        basis_functions = [
-            get_basis_function(o, d, s, r) for o, d, s, r in zip(order, der, side, dim)
-        ]
+            if d is None:
+                return basis.eval_all(points)
+            return basis.eval_diff_all(points, d)
 
         if face:
             nodes, weights = self.face_generator.get_quadrature_rule(np.sum(order))
         else:
             nodes, weights = self.get_quadrature_rule(np.sum(order))
+        points = nodes.T
 
-        sizes = [bn for _, bn in basis_functions]
-        tensor = np.empty(sizes)
-        generic_eval_basis = lambda x, index: np.prod(
-            [basis_functions[k][0](x, i) for k, i in enumerate(index)], axis=0
-        )
-        for index in itertools.product(*[range(size) for size in sizes]):
-            eval_basis = lambda x: generic_eval_basis(x, index)
-            tensor[index] = quad_rules.Quadrature.quad(nodes, weights, eval_basis)
-        return snap_zeros(tensor)
+        factors = [
+            values(o, d, s, r, points) for o, d, s, r in zip(order, der, side, dim)
+        ]
+        letters = "abcdefghijklmnop"[: len(factors)]
+        subscripts = "q," + ",".join(f"q{a}" for a in letters) + "->" + letters
+        return snap_zeros(np.einsum(subscripts, weights, *factors, optimize=True))
 
     def mass_matrix(self):
         if not np.any(self.M == None):

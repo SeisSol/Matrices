@@ -88,6 +88,47 @@ class BasisFunctionGenerator(ABC):
     def dim(self):
         pass
 
+    def eval_all(self, x):
+        """All basis functions at the points x (dim x points), shape (points, functions)."""
+        x = _as_points(x, self.dim())
+        n = self.number_of_basis_functions()
+        return np.stack(
+            [
+                np.broadcast_to(self.eval_basis(_coordinates(x), i), x.shape[1:])
+                for i in range(n)
+            ],
+            axis=-1,
+        )
+
+    def eval_diff_all(self, x, k):
+        """The derivatives d / d_x_k of all basis functions at the points x, shape
+        (points, functions)."""
+        x = _as_points(x, self.dim())
+        n = self.number_of_basis_functions()
+        return np.stack(
+            [
+                np.broadcast_to(
+                    self.eval_diff_basis(_coordinates(x), i, k), x.shape[1:]
+                )
+                for i in range(n)
+            ],
+            axis=-1,
+        )
+
+
+def _as_points(x, dim):
+    """Points as an array of shape (dim, points)."""
+    x = np.asarray(x, dtype=float)
+    if dim == 1 and x.ndim <= 1:
+        x = x.reshape(1, -1)
+    return x.reshape(dim, -1)
+
+
+def _coordinates(x):
+    """What eval_basis takes for points of shape (dim, points): the coordinate
+    itself on the interval, the rows otherwise."""
+    return x[0] if x.shape[0] == 1 else x
+
 
 ################################################################################
 

@@ -132,6 +132,31 @@ class test_basis_functions(unittest.TestCase):
         self.assertEqual(generator_3d.unroll_index([0, 1, 2]), 18)
         self.assertEqual(generator_3d.unroll_index([0, 0, 3]), 19)
 
+    def test_eval_all(self):
+        # all functions at once agree with one function at a time
+        rng = np.random.default_rng(0)
+        for generator in [
+            basis_functions.BasisFunctionGenerator1D(5),
+            basis_functions.BasisFunctionGenerator2D(5),
+            basis_functions.BasisFunctionGenerator3D(5),
+        ]:
+            dim = generator.dim()
+            points = rng.random((dim, 7)) / dim
+            coordinates = points[0] if dim == 1 else points
+            values = generator.eval_all(points)
+            n = generator.number_of_basis_functions()
+            self.assertEqual(values.shape, (7, n))
+            for k in range(dim):
+                derivatives = generator.eval_diff_all(points, k)
+                for i in range(n):
+                    np.testing.assert_array_equal(
+                        derivatives[:, i], generator.eval_diff_basis(coordinates, i, k)
+                    )
+            for i in range(n):
+                np.testing.assert_array_equal(
+                    values[:, i], generator.eval_basis(coordinates, i)
+                )
+
     def numerical_derivative(self, f, x):
         h = 1e-11
         return (f(x + h) - f(x - h)) / (2 * h)
