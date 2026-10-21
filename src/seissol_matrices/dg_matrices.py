@@ -337,11 +337,12 @@ class dg_generator:
             matrix = self.rT(side).T
             return np.linalg.solve(mass, matrix)
 
+        # the material is a field of the cell, read on the face like the basis
         prematrix = self.multilinear_form(
             True,
             [None, None, None],
             order=[matorder, self.order, self.order],
-            side=[None, None, side],
+            side=[side, None, side],
             dim=[3, 2, 3],
         )
         facemass = self.face_generator.mass_matrix()
