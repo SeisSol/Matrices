@@ -26,6 +26,66 @@ def snap_zeros(tensor, tolerance=ZERO_TOLERANCE):
     return np.where(magnitude > tolerance * largest, tensor, 0.0)
 
 
+def face_to_face_parametrisation(x, side):
+    # implement Dumbser & Käser, 2006 Table 2 b)
+    # chi = x[0,:]
+    # tau = x[1,:]
+    # y[0,:] = chi ~
+    # y[1,:] = tau ~
+    y = np.zeros((x.shape[0], x.shape[1]))
+    if side == 0:
+        y[0, :] = x[1, :]
+        y[1, :] = x[0, :]
+    elif side == 1:
+        y[0, :] = 1 - x[0, :] - x[1, :]
+        y[1, :] = x[1, :]
+    elif side == 2:
+        y[0, :] = x[0, :]
+        y[1, :] = 1 - x[0, :] - x[1, :]
+    return y
+
+
+def volume_to_face_parametrisation(x, side):
+    # implement Dumbser & Käser, 2006 Table 2 a)
+    # chi = x[0,:]
+    # tau = x[1,:]
+    # y[0,:] = xi(j)
+    # y[1,:] = eta(j)
+    # y[2,:] = zeta(j)
+    y = np.zeros((x.shape[0] + 1, x.shape[1]))
+    if side == 0:
+        y[0, :] = x[1, :]
+        y[1, :] = x[0, :]
+    elif side == 1:
+        y[0, :] = x[0, :]
+        y[2, :] = x[1, :]
+    elif side == 2:
+        y[1, :] = x[1, :]
+        y[2, :] = x[0, :]
+    elif side == 3:
+        y[0, :] = 1 - x[0, :] - x[1, :]
+        y[1, :] = x[0, :]
+        y[2, :] = x[1, :]
+    return y
+
+
+def face_vertices(face):
+    """The vertices of the tetrahedron at the points (0, 0), (1, 0), (0, 1) of a
+    face, as volume_to_face_parametrisation places the face."""
+    corners = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    points = volume_to_face_parametrisation(corners, face)
+    vertices = np.vstack([np.zeros(3), np.eye(3)])
+    return tuple(
+        int(np.argmin(np.linalg.norm(vertices - points[:, s], axis=1)))
+        for s in range(3)
+    )
+
+
+def opposite_vertex(face):
+    """The vertex of the tetrahedron not on a face."""
+    return ({0, 1, 2, 3} - set(face_vertices(face))).pop()
+
+
 ### Generates matrices which are of general interest for DG methods:
 ### Mass and Stiffness matrices
 ### kDivM and kDivMT which are SeisSol specific
@@ -188,22 +248,7 @@ class dg_generator:
         return base.material_index_last(np.linalg.solve(mass, sT))
 
     def face_to_face_parametrisation(self, x, side):
-        # implement Dumbser & Käser, 2006 Table 2 b)
-        # chi = x[0,:]
-        # tau = x[1,:]
-        # y[0,:] = chi ~
-        # y[1,:] = tau ~
-        y = np.zeros((x.shape[0], x.shape[1]))
-        if side == 0:
-            y[0, :] = x[1, :]
-            y[1, :] = x[0, :]
-        elif side == 1:
-            y[0, :] = 1 - x[0, :] - x[1, :]
-            y[1, :] = x[1, :]
-        elif side == 2:
-            y[0, :] = x[0, :]
-            y[1, :] = 1 - x[0, :] - x[1, :]
-        return y
+        return face_to_face_parametrisation(x, side)
 
     def face_times_face_mass_matrix(self, side):
         assert self.dim == 3
@@ -213,27 +258,7 @@ class dg_generator:
         return self.face_times_face_mass_matrix(side)
 
     def volume_to_face_parametrisation(self, x, side):
-        # implement Dumbser & Käser, 2006 Table 2 a)
-        # chi = x[0,:]
-        # tau = x[1,:]
-        # y[0,:] = xi(j)
-        # y[1,:] = eta(j)
-        # y[2,:] = zeta(j)
-        y = np.zeros((x.shape[0] + 1, x.shape[1]))
-        if side == 0:
-            y[0, :] = x[1, :]
-            y[1, :] = x[0, :]
-        elif side == 1:
-            y[0, :] = x[0, :]
-            y[2, :] = x[1, :]
-        elif side == 2:
-            y[1, :] = x[1, :]
-            y[2, :] = x[0, :]
-        elif side == 3:
-            y[0, :] = 1 - x[0, :] - x[1, :]
-            y[1, :] = x[0, :]
-            y[2, :] = x[1, :]
-        return y
+        return volume_to_face_parametrisation(x, side)
 
     def volume_times_face_mass_matrix(self, side):
         assert self.dim == 3
